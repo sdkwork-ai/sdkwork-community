@@ -10,6 +10,7 @@ import {
   configureOrderMobileRuntime,
   type WechatPaymentOAuthChannel,
 } from "@sdkwork/order-mobile-react-orders";
+import { uuid } from "@sdkwork/utils/id";
 import { getRuntime } from "./runtime";
 
 /**
@@ -34,11 +35,7 @@ import { getRuntime } from "./runtime";
 
 
 function createIdempotencyKey(): string {
-  const random = Math.random().toString(36).slice(2) + Date.now().toString(36);
-  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
-    return crypto.randomUUID();
-  }
-  return `community-${random}`;
+  return uuid();
 }
 
 function createWechatPaymentOAuthChannel(): WechatPaymentOAuthChannel {

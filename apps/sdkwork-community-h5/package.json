@@ -28,6 +28,7 @@
     "@sdkwork/order-app-sdk": "workspace:*",
     "@sdkwork/order-mobile-react-orders": "workspace:*",
     "@sdkwork/sdk-common": "workspace:*",
+    "@sdkwork/utils": "workspace:*",
     "i18next": "catalog:",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
