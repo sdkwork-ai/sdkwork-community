@@ -1,6 +1,5 @@
 version: 2
 defaultProfile: standalone.production
-
 profiles:
   standalone.production:
     deployment:
@@ -22,3 +21,28 @@ profiles:
         spec: specs/topology.spec.json
         profile: standalone.production
         env: etc/topology/standalone.production.env
+    expose:
+      - tls: sdkwork.com
+        mode: web
+        web: adaptive
+        domain: community.sdkwork.com
+      - tls: birdcoder.com
+        mode: web
+        web: adaptive
+        domain: community.birdcoder.com
+      - tls: dtupay.com
+        mode: web
+        web: adaptive
+        domain: community.dtupay.com
+      - tls: sdkwork.cn
+        mode: web
+        web: adaptive
+        domain: community.sdkwork.cn
+      - tls: birdcoder.cn
+        mode: web
+        web: adaptive
+        domain: community.birdcoder.cn
+      - tls: dtupay.cn
+        mode: web
+        web: adaptive
+        domain: community.dtupay.cn

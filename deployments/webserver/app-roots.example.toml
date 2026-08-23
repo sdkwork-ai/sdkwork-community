@@ -1,0 +1,23 @@
+# Adaptive Web roots for sdkwork-community (copy into runtime config when in-process).
+# Docker entrypoint generates /etc/sdkwork/webserver/module-app-roots/sdkwork-community.toml
+
+[app_roots]
+tablet_surface = "pc"
+
+[app_roots.pc_static_by_environment]
+development = "apps/sdkwork-community-pc/dist/dev"
+test = "apps/sdkwork-community-pc/dist/test"
+staging = "apps/sdkwork-community-pc/dist/staging"
+production = "apps/sdkwork-community-pc/dist/prod"
+
+[app_roots.h5_static_by_environment]
+development = "apps/sdkwork-community-h5/dist/dev"
+test = "apps/sdkwork-community-h5/dist/test"
+staging = "apps/sdkwork-community-h5/dist/staging"
+production = "apps/sdkwork-community-h5/dist/prod"
+
+[app_roots.static_fallback_by_environment]
+development = "deployments/webserver/static"
+test = "deployments/webserver/static"
+staging = "deployments/webserver/static"
+production = "deployments/webserver/static"
