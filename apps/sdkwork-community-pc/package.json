@@ -8,12 +8,14 @@
     "dev": "vite",
     "dev:server": "pnpm --dir ../.. gateway:run:standalone",
     "build": "vite build",
-    "build:staging": "vite build --mode staging",
-    "build:prod": "vite build --mode production",
+    "build:staging": "node ../../../sdkwork-specs/tools/build-browser-client.mjs --app-root . --environment staging",
+    "build:prod": "node ../../../sdkwork-specs/tools/build-browser-client.mjs --app-root . --environment prod",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "test": "pnpm test:config",
-    "test:config": "vitest run apps/sdkwork-community-common/packages/sdkwork-community-runtime/tests/community-runtime.standard.test.ts --root ../.. --config vitest.config.ts --configLoader native --pool vmThreads"
+    "test:config": "vitest run apps/sdkwork-community-common/packages/sdkwork-community-runtime/tests/community-runtime.standard.test.ts --root ../.. --config vitest.config.ts --configLoader native --pool vmThreads",
+    "build:dev": "node ../../../sdkwork-specs/tools/build-browser-client.mjs --app-root . --environment dev",
+    "build:test": "node ../../../sdkwork-specs/tools/build-browser-client.mjs --app-root . --environment test"
   },
   "dependencies": {
     "@sdkwork/auth-runtime-pc-react": "workspace:*",
