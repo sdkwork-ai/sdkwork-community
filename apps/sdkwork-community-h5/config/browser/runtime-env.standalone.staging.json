@@ -1,15 +1,14 @@
 {
-  "appApiBaseUrl": "/app/v3/api",
-  "appKey": "sdkwork-community",
-  "browserOriginMode": "same-origin",
+  "environment": "staging",
   "deploymentProfile": "standalone",
-  "environment": "development",
+  "profileId": "standalone.staging",
+  "runtimeTarget": "browser",
+  "browserOriginMode": "same-origin",
+  "appKey": "sdkwork-community",
   "featureFlags": {
     "community": true
   },
   "openApiBaseUrl": "/community/v3/api",
-  "profileId": "standalone.development",
-  "runtimeTarget": "browser",
   "sdkBaseUrls": {
     "appApiBaseUrl": "/app/v3/api",
     "dependencySdkBaseUrls": {
@@ -18,5 +17,10 @@
       }
     },
     "openApiBaseUrl": "/community/v3/api"
-  }
+  },
+  "appApiBaseUrl": "/",
+  "backendApiBaseUrl": "/",
+  "driveAppApiBaseUrl": "/",
+  "appbaseAppApiBaseUrl": "/",
+  "deployAppApiBaseUrl": "/"
 }

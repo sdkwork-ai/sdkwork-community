@@ -1,0 +1,26 @@
+{
+  "environment": "test",
+  "deploymentProfile": "cloud",
+  "profileId": "cloud.test",
+  "runtimeTarget": "browser",
+  "browserOriginMode": "cross-origin",
+  "appKey": "sdkwork-community",
+  "featureFlags": {
+    "community": true
+  },
+  "openApiBaseUrl": "/community/v3/api",
+  "sdkBaseUrls": {
+    "appApiBaseUrl": "/app/v3/api",
+    "dependencySdkBaseUrls": {
+      "sdkwork-iam-app-sdk": {
+        "appApiBaseUrl": "/app/v3/api"
+      }
+    },
+    "openApiBaseUrl": "/community/v3/api"
+  },
+  "appApiBaseUrl": "https://api-test.sdkwork.com",
+  "backendApiBaseUrl": "https://api-test.sdkwork.com",
+  "driveAppApiBaseUrl": "https://api-test.sdkwork.com",
+  "appbaseAppApiBaseUrl": "https://api-test.sdkwork.com",
+  "deployAppApiBaseUrl": "https://api-test.sdkwork.com"
+}

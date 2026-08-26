@@ -1,0 +1,26 @@
+{
+  "environment": "staging",
+  "deploymentProfile": "cloud",
+  "profileId": "cloud.staging",
+  "runtimeTarget": "browser",
+  "browserOriginMode": "cross-origin",
+  "appKey": "sdkwork-community",
+  "featureFlags": {
+    "community": true
+  },
+  "openApiBaseUrl": "/community/v3/api",
+  "sdkBaseUrls": {
+    "appApiBaseUrl": "/app/v3/api",
+    "dependencySdkBaseUrls": {
+      "sdkwork-iam-app-sdk": {
+        "appApiBaseUrl": "/app/v3/api"
+      }
+    },
+    "openApiBaseUrl": "/community/v3/api"
+  },
+  "appApiBaseUrl": "https://api-staging.sdkwork.com",
+  "backendApiBaseUrl": "https://api-staging.sdkwork.com",
+  "driveAppApiBaseUrl": "https://api-staging.sdkwork.com",
+  "appbaseAppApiBaseUrl": "https://api-staging.sdkwork.com",
+  "deployAppApiBaseUrl": "https://api-staging.sdkwork.com"
+}
