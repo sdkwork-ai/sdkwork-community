@@ -1,4 +1,5 @@
 packages:
+  - "../sdkwork-order/apps/sdkwork-order-common/packages/sdkwork-order-mobile-react-orders"
   - "apps/sdkwork-community-common"
   - "apps/sdkwork-community-common/packages/*"
   - "apps/sdkwork-community-pc"

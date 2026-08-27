@@ -8,7 +8,6 @@
   "featureFlags": {
     "community": true
   },
-  "openApiBaseUrl": "/community/v3/api",
   "sdkBaseUrls": {
     "appApiBaseUrl": "/app/v3/api",
     "dependencySdkBaseUrls": {
@@ -22,5 +21,7 @@
   "backendApiBaseUrl": "/",
   "driveAppApiBaseUrl": "/",
   "appbaseAppApiBaseUrl": "/",
-  "deployAppApiBaseUrl": "/"
+  "deployAppApiBaseUrl": "/",
+  "openApiBaseUrl": "/",
+  "sdkBaseUrl": "/"
 }
