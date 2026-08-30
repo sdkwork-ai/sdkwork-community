@@ -16,6 +16,13 @@
   },
   "dependencies": [
     {
+      "id": "sdkwork-app-topology",
+      "repository": "sdkwork-ai/sdkwork-app-topology",
+      "ref": "main",
+      "refInput": "SDKWORK_APP_TOPOLOGY_REF",
+      "tokenSecret": "SDKWORK_RELEASE_TOKEN"
+    },
+    {
       "id": "sdkwork-appbase",
       "repository": "sdkwork-ai/sdkwork-appbase",
       "ref": "main",
@@ -30,13 +37,6 @@
       "tokenSecret": "SDKWORK_RELEASE_TOKEN"
     },
     {
-      "id": "sdkwork-web-framework",
-      "repository": "sdkwork-ai/sdkwork-web-framework",
-      "ref": "main",
-      "refInput": "SDKWORK_WEB_FRAMEWORK_REF",
-      "tokenSecret": "SDKWORK_RELEASE_TOKEN"
-    },
-    {
       "id": "sdkwork-database",
       "repository": "sdkwork-ai/sdkwork-database",
       "ref": "main",
@@ -44,10 +44,9 @@
       "tokenSecret": "SDKWORK_RELEASE_TOKEN"
     },
     {
-      "id": "sdkwork-utils",
-      "repository": "sdkwork-ai/sdkwork-utils",
-      "ref": "main",
-      "refInput": "SDKWORK_UTILS_REF",
+      "id": "sdkwork-feeds",
+      "repository": "sdkwork-ai/sdkwork-feeds",
+      "refInput": "SDKWORK_FEEDS_REF",
       "tokenSecret": "SDKWORK_RELEASE_TOKEN"
     },
     {
@@ -58,10 +57,15 @@
       "tokenSecret": "SDKWORK_RELEASE_TOKEN"
     },
     {
-      "id": "sdkwork-sdk-generator",
-      "repository": "sdkwork-ai/sdkwork-sdk-generator",
-      "ref": "main",
-      "refInput": "SDKWORK_SDK_GENERATOR_REF",
+      "id": "sdkwork-id",
+      "repository": "sdkwork-ai/sdkwork-id",
+      "refInput": "SDKWORK_ID_REF",
+      "tokenSecret": "SDKWORK_RELEASE_TOKEN"
+    },
+    {
+      "id": "sdkwork-order",
+      "repository": "sdkwork-ai/sdkwork-order",
+      "refInput": "SDKWORK_ORDER_REF",
       "tokenSecret": "SDKWORK_RELEASE_TOKEN"
     },
     {
@@ -72,10 +76,10 @@
       "tokenSecret": "SDKWORK_RELEASE_TOKEN"
     },
     {
-      "id": "sdkwork-ui",
-      "repository": "sdkwork-ai/sdkwork-ui",
+      "id": "sdkwork-sdk-generator",
+      "repository": "sdkwork-ai/sdkwork-sdk-generator",
       "ref": "main",
-      "refInput": "SDKWORK_UI_REF",
+      "refInput": "SDKWORK_SDK_GENERATOR_REF",
       "tokenSecret": "SDKWORK_RELEASE_TOKEN"
     },
     {
@@ -86,10 +90,24 @@
       "tokenSecret": "SDKWORK_RELEASE_TOKEN"
     },
     {
-      "id": "sdkwork-app-topology",
-      "repository": "sdkwork-ai/sdkwork-app-topology",
+      "id": "sdkwork-ui",
+      "repository": "sdkwork-ai/sdkwork-ui",
       "ref": "main",
-      "refInput": "SDKWORK_APP_TOPOLOGY_REF",
+      "refInput": "SDKWORK_UI_REF",
+      "tokenSecret": "SDKWORK_RELEASE_TOKEN"
+    },
+    {
+      "id": "sdkwork-utils",
+      "repository": "sdkwork-ai/sdkwork-utils",
+      "ref": "main",
+      "refInput": "SDKWORK_UTILS_REF",
+      "tokenSecret": "SDKWORK_RELEASE_TOKEN"
+    },
+    {
+      "id": "sdkwork-web-framework",
+      "repository": "sdkwork-ai/sdkwork-web-framework",
+      "ref": "main",
+      "refInput": "SDKWORK_WEB_FRAMEWORK_REF",
       "tokenSecret": "SDKWORK_RELEASE_TOKEN"
     }
   ],
@@ -134,9 +152,13 @@
       "profile": "server",
       "platform": "linux",
       "architecture": "x64",
-      "formats": ["tar.gz"],
+      "formats": [
+        "tar.gz"
+      ],
       "runner": "ubuntu-24.04",
-      "outputGlobs": ["target/release/sdkwork-api-community-standalone-gateway"],
+      "outputGlobs": [
+        "target/release/sdkwork-api-community-standalone-gateway"
+      ],
       "profileBinding": "fixed",
       "deploymentProfile": "standalone",
       "runtimeTarget": "server"
@@ -146,7 +168,9 @@
       "profile": "server",
       "platform": "linux",
       "architecture": "x64",
-      "formats": ["tar.gz"],
+      "formats": [
+        "tar.gz"
+      ],
       "runner": "ubuntu-24.04",
       "outputGlobs": [
         "crates/sdkwork-api-community-assembly/Cargo.toml",
