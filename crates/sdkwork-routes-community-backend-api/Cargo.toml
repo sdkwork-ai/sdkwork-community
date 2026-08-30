@@ -13,7 +13,6 @@ axum.workspace = true
 serde.workspace = true
 sdkwork-community-service-host.workspace = true
 sdkwork-community-service.workspace = true
-sdkwork-community-storage-sqlx-rust.workspace = true
 sdkwork-routes-community-common.workspace = true
 sdkwork_iam_context_service.workspace = true
 sdkwork-web-core.workspace = true
