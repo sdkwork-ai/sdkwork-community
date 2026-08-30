@@ -1,0 +1,27 @@
+{
+  "environment": "production",
+  "deploymentProfile": "standalone",
+  "profileId": "standalone.production",
+  "runtimeTarget": "browser",
+  "browserOriginMode": "same-origin",
+  "appKey": "sdkwork-community",
+  "featureFlags": {
+    "community": true
+  },
+  "sdkBaseUrls": {
+    "appApiBaseUrl": "/app/v3/api",
+    "dependencySdkBaseUrls": {
+      "sdkwork-iam-app-sdk": {
+        "appApiBaseUrl": "/app/v3/api"
+      }
+    },
+    "openApiBaseUrl": "/community/v3/api"
+  },
+  "appApiBaseUrl": "/",
+  "backendApiBaseUrl": "/",
+  "driveAppApiBaseUrl": "/",
+  "appbaseAppApiBaseUrl": "/",
+  "deployAppApiBaseUrl": "/",
+  "openApiBaseUrl": "/",
+  "sdkBaseUrl": "/"
+}

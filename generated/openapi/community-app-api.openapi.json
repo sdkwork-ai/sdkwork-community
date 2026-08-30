@@ -2657,16 +2657,19 @@
             "type": "string"
           },
           "memberCount": {
-            "type": "integer",
-            "format": "int64"
+            "type": "string",
+            "format": "int64",
+            "x-sdkwork-int64-string": true
           },
           "memberLimit": {
-            "type": "integer",
-            "format": "int64"
+            "type": "string",
+            "format": "int64",
+            "x-sdkwork-int64-string": true
           },
           "postCount": {
-            "type": "integer",
-            "format": "int64"
+            "type": "string",
+            "format": "int64",
+            "x-sdkwork-int64-string": true
           },
           "isPaid": {
             "type": "boolean"
@@ -2729,8 +2732,9 @@
             "type": "boolean"
           },
           "memberLimit": {
-            "type": "integer",
-            "format": "int64"
+            "type": "string",
+            "format": "int64",
+            "x-sdkwork-int64-string": true
           },
           "price": {
             "type": "number",
@@ -2875,8 +2879,9 @@
             "type": "string"
           },
           "memberCount": {
-            "type": "integer",
-            "format": "int64"
+            "type": "string",
+            "format": "int64",
+            "x-sdkwork-int64-string": true
           },
           "qrCodes": {
             "type": "array",
@@ -2910,8 +2915,9 @@
             "type": "string"
           },
           "memberCount": {
-            "type": "integer",
-            "format": "int64"
+            "type": "string",
+            "format": "int64",
+            "x-sdkwork-int64-string": true
           },
           "qrCodes": {
             "type": "array",
@@ -2956,8 +2962,9 @@
             "format": "double"
           },
           "durationDays": {
-            "type": "integer",
-            "format": "int64"
+            "type": "string",
+            "format": "int64",
+            "x-sdkwork-int64-string": true
           },
           "lifetimePrice": {
             "type": "number",
@@ -2979,8 +2986,9 @@
             "type": "string"
           },
           "sortOrder": {
-            "type": "integer",
-            "format": "int64"
+            "type": "string",
+            "format": "int64",
+            "x-sdkwork-int64-string": true
           },
           "enabled": {
             "type": "boolean"
@@ -3006,8 +3014,9 @@
             "format": "double"
           },
           "durationDays": {
-            "type": "integer",
-            "format": "int64"
+            "type": "string",
+            "format": "int64",
+            "x-sdkwork-int64-string": true
           },
           "lifetimePrice": {
             "type": "number",
@@ -3023,8 +3032,9 @@
             "type": "string"
           },
           "sortOrder": {
-            "type": "integer",
-            "format": "int64"
+            "type": "string",
+            "format": "int64",
+            "x-sdkwork-int64-string": true
           }
         }
       },
