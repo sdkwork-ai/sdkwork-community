@@ -1,6 +1,6 @@
 {
   "name": "@sdkwork/community-app-sdk",
-  "version": "0.1.4",
+  "version": "0.1.6",
   "description": "SDKWork Community App SDK composed consumer facade.",
   "type": "module",
   "private": false,
