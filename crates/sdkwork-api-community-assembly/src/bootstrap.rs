@@ -3,7 +3,7 @@
 use axum::Router;
 use sdkwork_community_service_host::CommunityServiceHost;
 use sdkwork_database_sqlx::DatabasePool;
-use sdkwork_web_bootstrap::{ApiAssemblyContribution, DatabasePoolReadinessCheck};
+use sdkwork_web_bootstrap::{ApiAssemblyContribution, DatabasePoolReadinessCheck, WebModule};
 use sdkwork_web_core::HttpRouteManifest;
 use serde_json::Value;
 use std::sync::Arc;
@@ -41,8 +41,49 @@ pub async fn assemble_api_router() -> Result<ApiAssembly, String> {
     Ok(assemble_api_router_runtime().await?.contribution)
 }
 
+/// Builds the community service host on a process-shared pool. With the
+/// `commerce-membership-embedded` / `commerce-order-embedded` features
+/// selected, the composition wires the in-process commerce ports (membership
+/// package publisher and order payment verifier) so commerce consumes the
+/// embedded dependency capabilities directly (`APPLICATION_GATEWAY_SPEC.md`
+/// section 2.3) instead of looping HTTP requests through the host's own
+/// listener.
+pub async fn host_from_pool(pool: DatabasePool) -> Result<Arc<CommunityServiceHost>, String> {
+    #[cfg(feature = "commerce-membership-embedded")]
+    let membership_publisher = {
+        Some(Arc::new(
+            sdkwork_community_commerce_membership_embedded::EmbeddedMembershipPackagePublisher::from_pool(&pool)
+                .map_err(|error| {
+                    format!("embedded membership commerce publisher unavailable: {error}")
+                })?,
+        ) as Arc<dyn sdkwork_community_service_host::MembershipPackagePublisher>)
+    };
+    #[cfg(not(feature = "commerce-membership-embedded"))]
+    let membership_publisher = None;
+    #[cfg(feature = "commerce-order-embedded")]
+    let order_verifier = {
+        Some(Arc::new(
+            sdkwork_community_commerce_order_embedded::EmbeddedOrderPaymentVerifier::from_pool(
+                &pool,
+            )
+            .map_err(|error| format!("embedded order commerce verifier unavailable: {error}"))?,
+        )
+            as Arc<
+                dyn sdkwork_community_service_host::OrderPaymentVerifier,
+            >)
+    };
+    #[cfg(not(feature = "commerce-order-embedded"))]
+    let order_verifier = None;
+    CommunityServiceHost::from_database_pool_with_commerce_ports(
+        pool,
+        membership_publisher,
+        order_verifier,
+    )
+    .await
+}
+
 pub async fn assemble_api_router_with_pool(pool: DatabasePool) -> Result<ApiAssembly, String> {
-    let host = CommunityServiceHost::from_database_pool(pool).await?;
+    let host = host_from_pool(pool).await?;
     assemble_api_router_with_host(host)
 }
 
@@ -75,7 +116,7 @@ pub async fn assemble_backend_business_router_from_env() -> Result<BusinessRoute
 pub async fn assemble_backend_business_router_with_pool(
     pool: DatabasePool,
 ) -> Result<BusinessRouterAssembly, String> {
-    let host = CommunityServiceHost::from_database_pool(pool).await?;
+    let host = host_from_pool(pool).await?;
     Ok(assemble_backend_business_router(host).await)
 }
 
@@ -96,7 +137,7 @@ pub async fn assemble_app_api_contribution() -> Result<ApiAssembly, String> {
 pub async fn assemble_app_api_contribution_with_pool(
     pool: DatabasePool,
 ) -> Result<ApiAssembly, String> {
-    let host = CommunityServiceHost::from_database_pool(pool.clone()).await?;
+    let host = host_from_pool(pool).await?;
     assemble_app_api_contribution_with_host(host)
 }
 
@@ -187,6 +228,21 @@ fn authored_openapi_documents() -> Result<Vec<Value>, String> {
             .map_err(|error| format!("parse Community OpenAPI document failed: {error}"))
     })
     .collect()
+}
+
+/// Canonical Web Module definition for this application
+/// (API_ASSEMBLY_SPEC §4.1.1): the complete HTTP surface — every route,
+/// manifest, and OpenAPI document of this owner — as one installable module.
+pub async fn web_module() -> Result<WebModule, String> {
+    Ok(WebModule::from_contribution(assemble_api_router().await?))
+}
+
+/// Same as [`web_module`] but composed on a process-shared database pool
+/// (platform gateways, API_ASSEMBLY_SPEC §4.1.1).
+pub async fn web_module_with_pool(pool: DatabasePool) -> Result<WebModule, String> {
+    Ok(WebModule::from_contribution(
+        assemble_api_router_with_pool(pool).await?,
+    ))
 }
 
 #[cfg(test)]

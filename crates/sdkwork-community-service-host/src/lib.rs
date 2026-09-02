@@ -1,7 +1,9 @@
 use std::sync::Arc;
 
 use sdkwork_community_database_host::bootstrap_community_database;
-use sdkwork_community_service::CommunityService;
+pub use sdkwork_community_service::MembershipPackagePublisher;
+pub use sdkwork_community_service::OrderPaymentVerifier;
+use sdkwork_community_service::{CommerceIntegration, CommerceIntegrationConfig, CommunityService};
 use sdkwork_community_storage_sqlx::CommunitySqlxStore;
 use sdkwork_database_id::{
     IdGenerator, NodeAllocatorConfig, NodeLease, SnowflakeIdGenerator, SnowflakeNodeAllocator,
@@ -29,13 +31,27 @@ pub struct CommunityServiceHost {
 
 impl CommunityServiceHost {
     pub async fn from_env() -> Result<Self, String> {
+        Self::from_env_with_membership_publisher(None).await
+    }
+
+    /// Same as [`Self::from_env`] but wires an in-process membership package
+    /// publisher for embedded same-process membership deployments
+    /// (`APPLICATION_GATEWAY_SPEC.md` section 2.3).
+    pub async fn from_env_with_membership_publisher(
+        membership_publisher: Option<Arc<dyn MembershipPackagePublisher>>,
+    ) -> Result<Self, String> {
         let _ = dotenvy::dotenv();
         let database =
             sdkwork_community_storage_sqlx::bootstrap_community_database_from_env().await?;
         let pool = database.pool().clone();
         let (id_generator, id_lease) = build_id_generator(&pool).await?;
         let store = Arc::new(CommunitySqlxStore::new(pool.clone()));
-        let service = Arc::new(CommunityService::with_runtime_id_generator(store, id_generator));
+        let service = Arc::new(build_service(
+            store,
+            id_generator,
+            membership_publisher,
+            None,
+        ));
         spawn_official_tier_publish_bootstrap(service.clone());
         Ok(Self {
             database_pool: pool,
@@ -45,11 +61,40 @@ impl CommunityServiceHost {
     }
 
     pub async fn from_database_pool(pool: DatabasePool) -> Result<Arc<Self>, String> {
+        Self::from_database_pool_with_commerce_ports(pool, None, None).await
+    }
+
+    /// Same as [`Self::from_database_pool`] but wires an in-process membership
+    /// package publisher for embedded same-process membership deployments
+    /// (`APPLICATION_GATEWAY_SPEC.md` section 2.3).
+    pub async fn from_database_pool_with_membership_publisher(
+        pool: DatabasePool,
+        membership_publisher: Option<Arc<dyn MembershipPackagePublisher>>,
+    ) -> Result<Arc<Self>, String> {
+        Self::from_database_pool_with_commerce_ports(pool, membership_publisher, None).await
+    }
+
+    /// Same as [`Self::from_database_pool`] but wires the in-process commerce
+    /// ports (membership package publisher and/or order payment verifier) for
+    /// embedded same-process dependency deployments
+    /// (`APPLICATION_GATEWAY_SPEC.md` section 2.3). Ports wired here consume
+    /// the embedded dependency capability directly; unset ports fall back to
+    /// the HTTP adapters configured through `CommerceIntegrationConfig`.
+    pub async fn from_database_pool_with_commerce_ports(
+        pool: DatabasePool,
+        membership_publisher: Option<Arc<dyn MembershipPackagePublisher>>,
+        order_verifier: Option<Arc<dyn OrderPaymentVerifier>>,
+    ) -> Result<Arc<Self>, String> {
         let database = bootstrap_community_database(pool.clone()).await?;
         let pool = database.pool().clone();
         let (id_generator, id_lease) = build_id_generator(&pool).await?;
         let store = Arc::new(CommunitySqlxStore::new(pool.clone()));
-        let service = Arc::new(CommunityService::with_runtime_id_generator(store, id_generator));
+        let service = Arc::new(build_service(
+            store,
+            id_generator,
+            membership_publisher,
+            order_verifier,
+        ));
         spawn_official_tier_publish_bootstrap(service.clone());
         Ok(Arc::new(Self {
             database_pool: pool,
@@ -65,6 +110,28 @@ impl CommunityServiceHost {
     pub fn service(&self) -> Arc<CommunityService> {
         self.service.clone()
     }
+}
+
+/// Builds the community service with the environment-configured commerce
+/// integration, optionally overriding the HTTP membership/order adapters with
+/// in-process ports wired by the deployment composition root
+/// (`APPLICATION_GATEWAY_SPEC.md` section 2.3).
+fn build_service(
+    store: Arc<CommunitySqlxStore>,
+    id_generator: Arc<dyn IdGenerator>,
+    membership_publisher: Option<Arc<dyn MembershipPackagePublisher>>,
+    order_verifier: Option<Arc<dyn OrderPaymentVerifier>>,
+) -> CommunityService {
+    let commerce = CommerceIntegration::new(CommerceIntegrationConfig::from_env());
+    let commerce = match membership_publisher {
+        Some(publisher) => commerce.with_in_process_publisher(publisher),
+        None => commerce,
+    };
+    let commerce = match order_verifier {
+        Some(verifier) => commerce.with_in_process_order_verifier(verifier),
+        None => commerce,
+    };
+    CommunityService::with_id_generator(store, Arc::new(commerce), id_generator)
 }
 
 /// Builds the backend-owned snowflake id generator.
@@ -127,13 +194,27 @@ fn id_fallback_is_forbidden() -> bool {
     !explicit_override && !cfg!(debug_assertions)
 }
 
-
 /// Publishes the official seeded circle tiers shortly after startup
 /// (idempotent), retrying until the collapsed ingress listener is ready.
 ///
 /// Fail-soft: a missing commerce backend (or any transient error) must never
 /// block gateway boot; the next startup retries automatically.
 fn spawn_official_tier_publish_bootstrap(service: Arc<CommunityService>) {
+    // The auto-publish registers packages on the membership backend
+    // capability. Publishing requires either an in-process publisher wired by
+    // the composition root (embedded deployment) or a fully configured HTTP
+    // membership backend (separate-process deployment). A missing
+    // configuration is permanent, so log once and skip instead of emitting
+    // repeated failed attempts during startup.
+    if !service.commerce().membership_publish_is_configured() {
+        eprintln!(
+            "[community] official circle tier auto-publish skipped: membership commerce integration is not configured \
+             (embed the membership assembly with an in-process publisher, or set SDKWORK_MEMBERSHIP_BACKEND_API_BASE_URL \
+             with SDKWORK_MEMBERSHIP_BACKEND_AUTH_TOKEN and SDKWORK_MEMBERSHIP_BACKEND_ACCESS_TOKEN for a \
+             separate-process membership deployment)"
+        );
+        return;
+    }
     tokio::spawn(async move {
         for attempt in 1..=10u32 {
             match service.publish_official_circle_tiers().await {

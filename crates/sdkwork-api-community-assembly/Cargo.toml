@@ -20,6 +20,19 @@ sdkwork-community-service-host.workspace = true
 sdkwork-routes-community-app-api.workspace = true
 sdkwork-routes-community-backend-api.workspace = true
 sdkwork-routes-community-open-api.workspace = true
+sdkwork-community-commerce-membership-embedded = { workspace = true, optional = true }
+sdkwork-community-commerce-order-embedded = { workspace = true, optional = true }
+
+[features]
+default = []
+# Embedded same-process membership composition: wires the in-process
+# membership package publisher so community commerce consumes the mounted
+# membership capability directly (APPLICATION_GATEWAY_SPEC.md section 2.3).
+commerce-membership-embedded = ["dep:sdkwork-community-commerce-membership-embedded"]
+# Embedded same-process order composition: wires the in-process order payment
+# verifier so community commerce consumes the mounted order capability
+# directly (APPLICATION_GATEWAY_SPEC.md section 2.3).
+commerce-order-embedded = ["dep:sdkwork-community-commerce-order-embedded"]
 
 [dev-dependencies]
 sdkwork-web-contract.workspace = true

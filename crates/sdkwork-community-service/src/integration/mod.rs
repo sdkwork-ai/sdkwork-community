@@ -4,6 +4,7 @@
 pub mod commerce;
 
 pub use commerce::{
-    CommerceIntegration, CommerceIntegrationConfig, MembershipPackageRegistration,
-    OrderPaymentVerification, RegisteredMembershipPackage,
+    CommerceIntegration, CommerceIntegrationConfig, MembershipPackagePublishFuture,
+    MembershipPackagePublisher, MembershipPackageRegistration, OrderPaymentVerification,
+    OrderPaymentVerifier, OrderPaymentVerifyFuture, RegisteredMembershipPackage,
 };

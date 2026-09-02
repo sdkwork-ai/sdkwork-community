@@ -295,9 +295,7 @@ pub struct CommunityService {
 /// canonical SDKWork epoch. Production hosts inject a database-allocated
 /// generator through [`CommunityService::with_id_generator`].
 fn default_id_generator() -> Arc<dyn IdGenerator> {
-    Arc::new(
-        SnowflakeIdGenerator::new(0).expect("snowflake node 0 must initialize"),
-    )
+    Arc::new(SnowflakeIdGenerator::new(0).expect("snowflake node 0 must initialize"))
 }
 
 impl CommunityService {
@@ -325,7 +323,9 @@ impl CommunityService {
     ) -> Self {
         Self::with_id_generator(
             store,
-            Arc::new(CommerceIntegration::new(CommerceIntegrationConfig::from_env())),
+            Arc::new(CommerceIntegration::new(
+                CommerceIntegrationConfig::from_env(),
+            )),
             id_generator,
         )
     }
@@ -354,9 +354,9 @@ impl CommunityService {
     /// entity ids — circles, entries, comments, reactions, members, groups,
     /// tiers — come from the injected generator; clients never mint ids.
     fn next_entity_id(&self) -> Result<String, CommunityServiceError> {
-        self.id_generator
-            .next_id()
-            .map_err(|error| CommunityServiceError::Storage(format!("id generation failed: {error}")))
+        self.id_generator.next_id().map_err(|error| {
+            CommunityServiceError::Storage(format!("id generation failed: {error}"))
+        })
     }
 
     pub async fn list_categories(
@@ -800,7 +800,9 @@ impl CommunityService {
         actor_user_id: &str,
         category_id: &str,
     ) -> Result<CommunityCommandAccepted, CommunityServiceError> {
-        let member = self.current_member(tenant_id, category_id, actor_user_id).await?;
+        let member = self
+            .current_member(tenant_id, category_id, actor_user_id)
+            .await?;
         match member.as_ref().map(|member| member.role.as_str()) {
             Some("owner") => {}
             _ => {
@@ -1509,9 +1511,7 @@ impl CommunityService {
     /// seeded multi-price purchase surface works out of the box. Runs once at
     /// service startup; already-published tiers are skipped and user-created
     /// circles keep owner publishing control.
-    pub async fn publish_official_circle_tiers(
-        &self,
-    ) -> Result<usize, CommunityServiceError> {
+    pub async fn publish_official_circle_tiers(&self) -> Result<usize, CommunityServiceError> {
         let categories = self
             .store
             .list_official_paid_categories()
@@ -1606,10 +1606,7 @@ impl CommunityService {
                     .commerce
                     .register_membership_package(MembershipPackageRegistration {
                         category: "community".to_owned(),
-                        code: format!(
-                            "community-tier-{}-lifetime",
-                            tier.id.replace('-', "")
-                        ),
+                        code: format!("community-tier-{}-lifetime", tier.id.replace('-', "")),
                         package_group_id: "package-group-circle-membership".to_owned(),
                         plan_id: "plan-circle-membership".to_owned(),
                         name: format!("{} · {}（终身）", category.title, tier.name),

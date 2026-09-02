@@ -6,6 +6,9 @@ members = [
     "crates/sdkwork-community-storage-sqlx-rust",
     "crates/sdkwork-community-http-rust",
     "crates/sdkwork-community-service",
+    "crates/sdkwork-community-commerce-membership-embedded",
+    "crates/sdkwork-community-commerce-order-embedded",
+    "crates/sdkwork-community-feeds-community-embedded",
     "crates/sdkwork-routes-community-common",
     "crates/sdkwork-routes-community-open-api",
     "crates/sdkwork-routes-community-app-api",
@@ -40,6 +43,9 @@ sdkwork-community-database-host = { path = "crates/sdkwork-community-database-ho
 sdkwork-community-storage-sqlx-rust = { path = "crates/sdkwork-community-storage-sqlx-rust" }
 sdkwork-community-http-rust = { path = "crates/sdkwork-community-http-rust" }
 sdkwork-community-service = { path = "crates/sdkwork-community-service" }
+sdkwork-community-commerce-membership-embedded = { path = "crates/sdkwork-community-commerce-membership-embedded" }
+sdkwork-community-commerce-order-embedded = { path = "crates/sdkwork-community-commerce-order-embedded" }
+sdkwork-community-feeds-community-embedded = { path = "crates/sdkwork-community-feeds-community-embedded" }
 sdkwork-routes-community-common = { path = "crates/sdkwork-routes-community-common" }
 sdkwork-routes-community-open-api = { path = "crates/sdkwork-routes-community-open-api" }
 sdkwork-routes-community-app-api = { path = "crates/sdkwork-routes-community-app-api" }

@@ -14,6 +14,9 @@
 //! `SDKWORK_MEMBERSHIP_BACKEND_ACCESS_TOKEN` and
 //! `SDKWORK_ORDER_BACKEND_AUTH_TOKEN` / `SDKWORK_ORDER_BACKEND_ACCESS_TOKEN`.
 
+use std::fmt;
+use std::future::Future;
+use std::pin::Pin;
 use std::sync::Arc;
 
 use serde::Serialize;
@@ -87,10 +90,77 @@ pub struct OrderPaymentVerification {
     pub paid_amount: Option<f64>,
 }
 
-#[derive(Debug, Clone)]
+/// Boxed future returned by [`MembershipPackagePublisher`].
+pub type MembershipPackagePublishFuture<'a> =
+    Pin<Box<dyn Future<Output = Result<RegisteredMembershipPackage, String>> + Send + 'a>>;
+
+/// Required port for registering a purchasable membership package on the
+/// membership backend capability (`APPLICATION_GATEWAY_SPEC.md` section 2.3).
+///
+/// Implementations:
+/// - the built-in HTTP adapter in [`CommerceIntegration`] — for deployments
+///   where the membership backend runs in a separate process (base URL and
+///   dual-token credentials come from [`CommerceIntegrationConfig`]);
+/// - in-process adapters wired by the deployment composition root — for
+///   gateways that embed the membership assembly in the same process; these
+///   consume the capability directly and `MUST NOT` loop HTTP requests back
+///   through the gateway's own listener.
+pub trait MembershipPackagePublisher: Send + Sync {
+    fn register_membership_package<'a>(
+        &'a self,
+        registration: MembershipPackageRegistration,
+    ) -> MembershipPackagePublishFuture<'a>;
+}
+
+/// Boxed future returned by [`OrderPaymentVerifier`].
+pub type OrderPaymentVerifyFuture<'a> =
+    Pin<Box<dyn Future<Output = Result<OrderPaymentVerification, String>> + Send + 'a>>;
+
+/// Required port for verifying an order's payment state on the order backend
+/// capability (`APPLICATION_GATEWAY_SPEC.md` section 2.3).
+///
+/// Implementations:
+/// - the built-in HTTP adapter in [`CommerceIntegration`] — for deployments
+///   where the order backend runs in a separate process (base URL and
+///   dual-token credentials come from [`CommerceIntegrationConfig`]);
+/// - in-process adapters wired by the deployment composition root — for
+///   gateways that embed the order assembly in the same process; these
+///   consume the capability directly and `MUST NOT` loop HTTP requests back
+///   through the gateway's own listener.
+pub trait OrderPaymentVerifier: Send + Sync {
+    fn verify_order_payment<'a>(&'a self, order_id: &'a str) -> OrderPaymentVerifyFuture<'a>;
+}
+
+#[derive(Clone)]
 pub struct CommerceIntegration {
     config: Arc<CommerceIntegrationConfig>,
     http: reqwest::Client,
+    /// In-process publisher wired by the composition root for embedded
+    /// same-process membership deployments. Takes precedence over the HTTP
+    /// adapter; no per-dependency base URL or loopback IAM credentials are
+    /// consulted when it is present.
+    in_process_publisher: Option<Arc<dyn MembershipPackagePublisher>>,
+    /// In-process order payment verifier wired by the composition root for
+    /// embedded same-process order deployments. Takes precedence over the
+    /// HTTP adapter (see [`OrderPaymentVerifier`]).
+    in_process_order_verifier: Option<Arc<dyn OrderPaymentVerifier>>,
+}
+
+impl fmt::Debug for CommerceIntegration {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter
+            .debug_struct("CommerceIntegration")
+            .field("config", &self.config)
+            .field(
+                "in_process_publisher",
+                &self.in_process_publisher.as_ref().map(|_| "<wired>"),
+            )
+            .field(
+                "in_process_order_verifier",
+                &self.in_process_order_verifier.as_ref().map(|_| "<wired>"),
+            )
+            .finish()
+    }
 }
 
 impl CommerceIntegration {
@@ -98,7 +168,52 @@ impl CommerceIntegration {
         Self {
             config: Arc::new(config),
             http: reqwest::Client::new(),
+            in_process_publisher: None,
+            in_process_order_verifier: None,
         }
+    }
+
+    /// Wires an in-process membership package publisher (embedded
+    /// same-process deployment). When set, package registration consumes the
+    /// embedded membership capability directly and never uses the HTTP
+    /// adapter.
+    pub fn with_in_process_publisher(
+        mut self,
+        publisher: Arc<dyn MembershipPackagePublisher>,
+    ) -> Self {
+        self.in_process_publisher = Some(publisher);
+        self
+    }
+
+    /// Wires an in-process order payment verifier (embedded same-process
+    /// deployment). When set, payment verification consumes the embedded
+    /// order capability directly and never uses the HTTP adapter.
+    pub fn with_in_process_order_verifier(
+        mut self,
+        verifier: Arc<dyn OrderPaymentVerifier>,
+    ) -> Self {
+        self.in_process_order_verifier = Some(verifier);
+        self
+    }
+
+    /// True when payment verification can run: an in-process order verifier
+    /// is wired, or the HTTP order backend (base URL plus dual tokens) is
+    /// fully configured.
+    pub fn order_verify_is_configured(&self) -> bool {
+        self.in_process_order_verifier.is_some()
+            || (self.config.order_backend_base_url.is_some()
+                && self.config.order_backend_auth_token.is_some()
+                && self.config.order_backend_access_token.is_some())
+    }
+
+    /// True when tier publishing can run: an in-process publisher is wired,
+    /// or the HTTP membership backend (base URL plus dual tokens) is fully
+    /// configured.
+    pub fn membership_publish_is_configured(&self) -> bool {
+        self.in_process_publisher.is_some()
+            || (self.config.membership_backend_base_url.is_some()
+                && self.config.membership_backend_auth_token.is_some()
+                && self.config.membership_backend_access_token.is_some())
     }
 
     pub fn config(&self) -> &CommerceIntegrationConfig {
@@ -131,6 +246,12 @@ impl CommerceIntegration {
         &self,
         registration: MembershipPackageRegistration,
     ) -> Result<RegisteredMembershipPackage, String> {
+        // Embedded same-process deployment: consume the mounted membership
+        // capability directly through the wired in-process port; never loop
+        // back through the gateway's own HTTP listener.
+        if let Some(publisher) = self.in_process_publisher.as_ref() {
+            return publisher.register_membership_package(registration).await;
+        }
         let base_url = self
             .config
             .membership_backend_base_url
@@ -191,9 +312,11 @@ impl CommerceIntegration {
             .get("externalId")
             .or_else(|| item.get("external_id"))
             .and_then(|value| {
-                value
-                    .as_i64()
-                    .or_else(|| value.as_str().and_then(|raw| raw.trim().parse::<i64>().ok()))
+                value.as_i64().or_else(|| {
+                    value
+                        .as_str()
+                        .and_then(|raw| raw.trim().parse::<i64>().ok())
+                })
             })
             .ok_or_else(|| {
                 "membership package registration did not return externalId".to_owned()
@@ -220,6 +343,12 @@ impl CommerceIntegration {
         &self,
         order_id: &str,
     ) -> Result<OrderPaymentVerification, String> {
+        // Embedded same-process deployment: consume the mounted order
+        // capability directly through the wired in-process port; never loop
+        // back through the gateway's own HTTP listener.
+        if let Some(verifier) = self.in_process_order_verifier.as_ref() {
+            return verifier.verify_order_payment(order_id).await;
+        }
         let base_url = self.config.order_backend_base_url.clone().ok_or_else(|| {
             "order backend is not configured (SDKWORK_ORDER_BACKEND_API_BASE_URL)".to_owned()
         })?;

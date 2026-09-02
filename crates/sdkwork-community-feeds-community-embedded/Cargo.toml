@@ -1,0 +1,21 @@
+[package]
+name = "sdkwork-community-feeds-community-embedded"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+async-trait.workspace = true
+serde_json.workspace = true
+sdkwork-community-service.workspace = true
+sdkwork-community-storage-sqlx-rust.workspace = true
+# Feeds is the dependency application; this consumer-side L4 adapter reads the
+# community domain in-process (embedded same-process deployment) instead of
+# looping HTTP requests through the host's own listener
+# (APPLICATION_GATEWAY_SPEC §2.3).
+sdkwork-content-feeds-core-rust = { path = "../../../sdkwork-feeds/crates/sdkwork-content-feeds-core-rust" }
+sdkwork-content-feeds-service = { path = "../../../sdkwork-feeds/crates/sdkwork-content-feeds-service" }

@@ -9,8 +9,8 @@ use sdkwork_iam_web_adapter::{
 };
 use sdkwork_web_bootstrap::{
     init_tracing_from_env, shared_concurrent_admission_store, shared_idempotency_store,
-    shared_rate_limit_store, ComposedApiAssembly, CompositeReadinessCheck, ReadinessCheck,
-    RedisReadinessCheck,
+    shared_rate_limit_store, ApiModuleRegistry, ComposedApiAssembly, CompositeReadinessCheck,
+    ReadinessCheck, RedisReadinessCheck,
 };
 use std::sync::Arc;
 
@@ -28,8 +28,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         &[APPLICATION_ID],
     )
     .await?;
-    let mut composed =
-        ComposedApiAssembly::try_compose("SDKWork Community API", vec![runtime.contribution])?;
+    let mut module_registry = ApiModuleRegistry::new();
+    module_registry.add_modules(vec![runtime.contribution]);
+    let mut composed = module_registry.try_compose("SDKWork Community API")?;
     let manifest = composed.route_manifest.clone();
     let mut framework =
         sdkwork_iam_web_adapter::build_web_framework_builder(resolver, manifest, Vec::new());
