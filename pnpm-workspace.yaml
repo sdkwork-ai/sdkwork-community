@@ -1,4 +1,7 @@
 packages:
+  - "../sdkwork-order/sdks/sdkwork-order-app-sdk/sdkwork-order-app-sdk-typescript"
+  - "../sdkwork-feeds/sdks/sdkwork-feeds-sdk/sdkwork-feeds-sdk-typescript"
+  - "../sdkwork-order/apps/sdkwork-order-common/packages/sdkwork-order-mobile-react-orders"
   - "apps/sdkwork-community-common"
   - "apps/sdkwork-community-common/packages/*"
   - "apps/sdkwork-community-pc"
