@@ -144,25 +144,33 @@ function mapFeedItemToPost(item: FeedItem): Post {
 }
 
 class SdkworkCommunityPcService implements CommunityService {
-  private readonly portFactory: () => SdkworkCommunityAppSdkPort;
-  private readonly feedsClientFactory: (() => SdkworkFeedsClient) | null;
-
   constructor(options: CommunityServiceOptions = {}) {
+    // Host access MUST stay lazy: this module is evaluated during the static
+    // import chain of the embedding app (e.g. sdkwork-im-pc main.tsx), while
+    // `configureCommunityPcHost()` only runs later in that app's bootstrap.
+    // Resolving the host here threw
+    // "Community PC host adapter is not configured" at module-evaluation time.
     this.portFactory = () => options.port ?? getCommunityPcHost().createAppSdkPort();
-    const hostFeeds = getCommunityPcHost().createFeedsSdkClient;
-    this.feedsClientFactory = options.feedsClient
+    this.explicitFeedsClientFactory = options.feedsClient
       ? () => options.feedsClient as SdkworkFeedsClient
-      : hostFeeds
-        ? () => hostFeeds()
-        : null;
+      : null;
   }
+
+  private readonly portFactory: () => SdkworkCommunityAppSdkPort;
+  private readonly explicitFeedsClientFactory: (() => SdkworkFeedsClient) | null;
 
   private port(): SdkworkCommunityAppSdkPort {
     return this.portFactory();
   }
 
   private feedsClient(): SdkworkFeedsClient | null {
-    return this.feedsClientFactory ? this.feedsClientFactory() : null;
+    if (this.explicitFeedsClientFactory) {
+      return this.explicitFeedsClientFactory();
+    }
+    // Resolved lazily at first data fetch — after the embedding app has
+    // configured the host adapter.
+    const hostFeeds = getCommunityPcHost().createFeedsSdkClient;
+    return hostFeeds ? hostFeeds() : null;
   }
 
   async getCommunities(): Promise<Community[]> {
