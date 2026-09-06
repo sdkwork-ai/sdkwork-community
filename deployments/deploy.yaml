@@ -34,6 +34,10 @@ profiles:
         mode: web
         web: adaptive
         domain: community.dtupay.com
+      - tls: noaper.com
+        mode: web
+        web: adaptive
+        domain: community.noaper.com
       - tls: sdkwork.cn
         mode: web
         web: adaptive
@@ -46,6 +50,10 @@ profiles:
         mode: web
         web: adaptive
         domain: community.dtupay.cn
+      - tls: noaper.cn
+        mode: web
+        web: adaptive
+        domain: community.noaper.cn
       - tls: skubc.com
         mode: web
         web: adaptive
