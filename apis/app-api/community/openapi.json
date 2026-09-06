@@ -73,8 +73,7 @@
         "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-standard-profile": "sdkwork-v3",
-        "x-sdkwork-permission": "community.categories.read"
+        "x-sdkwork-standard-profile": "sdkwork-v3"
       },
       "post": {
         "tags": [
@@ -139,8 +138,7 @@
         "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-standard-profile": "sdkwork-v3",
-        "x-sdkwork-permission": "community.categories.write"
+        "x-sdkwork-standard-profile": "sdkwork-v3"
       }
     },
     "/app/v3/api/community/categories/{categoryId}": {
@@ -207,8 +205,7 @@
         "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-standard-profile": "sdkwork-v3",
-        "x-sdkwork-permission": "community.categories.read"
+        "x-sdkwork-standard-profile": "sdkwork-v3"
       },
       "patch": {
         "tags": [
@@ -283,8 +280,7 @@
         "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-standard-profile": "sdkwork-v3",
-        "x-sdkwork-permission": "community.categories.write"
+        "x-sdkwork-standard-profile": "sdkwork-v3"
       },
       "delete": {
         "tags": [
@@ -342,8 +338,7 @@
         "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-standard-profile": "sdkwork-v3",
-        "x-sdkwork-permission": "community.categories.write"
+        "x-sdkwork-standard-profile": "sdkwork-v3"
       }
     },
     "/app/v3/api/community/categories/{categoryId}/join": {
@@ -410,8 +405,7 @@
         "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-standard-profile": "sdkwork-v3",
-        "x-sdkwork-permission": "community.members.write"
+        "x-sdkwork-standard-profile": "sdkwork-v3"
       }
     },
     "/app/v3/api/community/categories/{categoryId}/members": {
@@ -478,8 +472,7 @@
         "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-standard-profile": "sdkwork-v3",
-        "x-sdkwork-permission": "community.members.read"
+        "x-sdkwork-standard-profile": "sdkwork-v3"
       }
     },
     "/app/v3/api/community/categories/{categoryId}/members/current": {
@@ -576,8 +569,7 @@
         "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-standard-profile": "sdkwork-v3",
-        "x-sdkwork-permission": "community.members.read"
+        "x-sdkwork-standard-profile": "sdkwork-v3"
       }
     },
     "/app/v3/api/community/categories/{categoryId}/members/{memberId}": {
@@ -663,8 +655,7 @@
         "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-standard-profile": "sdkwork-v3",
-        "x-sdkwork-permission": "community.members.write"
+        "x-sdkwork-standard-profile": "sdkwork-v3"
       },
       "delete": {
         "tags": [
@@ -731,8 +722,7 @@
         "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-standard-profile": "sdkwork-v3",
-        "x-sdkwork-permission": "community.members.write"
+        "x-sdkwork-standard-profile": "sdkwork-v3"
       }
     },
     "/app/v3/api/community/categories/{categoryId}/members/activate": {
@@ -809,8 +799,7 @@
         "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-standard-profile": "sdkwork-v3",
-        "x-sdkwork-permission": "community.memberships.write"
+        "x-sdkwork-standard-profile": "sdkwork-v3"
       }
     },
     "/app/v3/api/community/categories/{categoryId}/tiers": {
@@ -885,8 +874,7 @@
         "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-standard-profile": "sdkwork-v3",
-        "x-sdkwork-permission": "community.tiers.read"
+        "x-sdkwork-standard-profile": "sdkwork-v3"
       },
       "post": {
         "tags": [
@@ -961,8 +949,7 @@
         "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-standard-profile": "sdkwork-v3",
-        "x-sdkwork-permission": "community.tiers.write"
+        "x-sdkwork-standard-profile": "sdkwork-v3"
       }
     },
     "/app/v3/api/community/categories/{categoryId}/tiers/{tierId}": {
@@ -1048,8 +1035,7 @@
         "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-standard-profile": "sdkwork-v3",
-        "x-sdkwork-permission": "community.tiers.write"
+        "x-sdkwork-standard-profile": "sdkwork-v3"
       },
       "delete": {
         "tags": [
@@ -1116,8 +1102,7 @@
         "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-standard-profile": "sdkwork-v3",
-        "x-sdkwork-permission": "community.tiers.write"
+        "x-sdkwork-standard-profile": "sdkwork-v3"
       }
     },
     "/app/v3/api/community/categories/{categoryId}/tiers/{tierId}/publish": {
@@ -1193,8 +1178,7 @@
         "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-standard-profile": "sdkwork-v3",
-        "x-sdkwork-permission": "community.tiers.write"
+        "x-sdkwork-standard-profile": "sdkwork-v3"
       }
     },
     "/app/v3/api/community/categories/{categoryId}/tiers/{tierId}/unpublish": {
@@ -1270,8 +1254,7 @@
         "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-standard-profile": "sdkwork-v3",
-        "x-sdkwork-permission": "community.tiers.write"
+        "x-sdkwork-standard-profile": "sdkwork-v3"
       }
     },
     "/app/v3/api/community/categories/{categoryId}/groups": {
@@ -1338,8 +1321,7 @@
         "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-standard-profile": "sdkwork-v3",
-        "x-sdkwork-permission": "community.groups.read"
+        "x-sdkwork-standard-profile": "sdkwork-v3"
       },
       "post": {
         "tags": [
@@ -1414,8 +1396,7 @@
         "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-standard-profile": "sdkwork-v3",
-        "x-sdkwork-permission": "community.groups.write"
+        "x-sdkwork-standard-profile": "sdkwork-v3"
       }
     },
     "/app/v3/api/community/categories/{categoryId}/groups/{groupId}": {
@@ -1501,8 +1482,7 @@
         "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-standard-profile": "sdkwork-v3",
-        "x-sdkwork-permission": "community.groups.write"
+        "x-sdkwork-standard-profile": "sdkwork-v3"
       },
       "delete": {
         "tags": [
@@ -1569,8 +1549,7 @@
         "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-standard-profile": "sdkwork-v3",
-        "x-sdkwork-permission": "community.groups.write"
+        "x-sdkwork-standard-profile": "sdkwork-v3"
       }
     },
     "/app/v3/api/community/feed": {
@@ -1753,8 +1732,7 @@
         "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-standard-profile": "sdkwork-v3",
-        "x-sdkwork-permission": "community.entries.read"
+        "x-sdkwork-standard-profile": "sdkwork-v3"
       },
       "patch": {
         "tags": [
@@ -1829,8 +1807,7 @@
         "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-standard-profile": "sdkwork-v3",
-        "x-sdkwork-permission": "community.entries.write"
+        "x-sdkwork-standard-profile": "sdkwork-v3"
       },
       "delete": {
         "tags": [
@@ -1888,8 +1865,7 @@
         "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-standard-profile": "sdkwork-v3",
-        "x-sdkwork-permission": "community.entries.write"
+        "x-sdkwork-standard-profile": "sdkwork-v3"
       }
     },
     "/app/v3/api/community/entries/{entryId}/recommendations": {
@@ -1956,8 +1932,7 @@
         "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-standard-profile": "sdkwork-v3",
-        "x-sdkwork-permission": "community.recommendations.read"
+        "x-sdkwork-standard-profile": "sdkwork-v3"
       }
     },
     "/app/v3/api/community/entries": {
@@ -2024,8 +1999,7 @@
         "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-standard-profile": "sdkwork-v3",
-        "x-sdkwork-permission": "community.entries.write"
+        "x-sdkwork-standard-profile": "sdkwork-v3"
       }
     },
     "/app/v3/api/community/entries/{entryId}/publication_readiness": {
@@ -2092,8 +2066,7 @@
         "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-standard-profile": "sdkwork-v3",
-        "x-sdkwork-permission": "community.entries.read"
+        "x-sdkwork-standard-profile": "sdkwork-v3"
       }
     },
     "/app/v3/api/community/entries/{entryId}/reactions": {
@@ -2170,8 +2143,7 @@
         "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-standard-profile": "sdkwork-v3",
-        "x-sdkwork-permission": "community.reactions.write"
+        "x-sdkwork-standard-profile": "sdkwork-v3"
       }
     },
     "/app/v3/api/community/entries/{entryId}/comments": {
@@ -2238,8 +2210,7 @@
         "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-standard-profile": "sdkwork-v3",
-        "x-sdkwork-permission": "community.comments.read"
+        "x-sdkwork-standard-profile": "sdkwork-v3"
       },
       "post": {
         "tags": [
@@ -2314,8 +2285,7 @@
         "x-sdkwork-auth-mode": "dual-token",
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-standard-profile": "sdkwork-v3",
-        "x-sdkwork-permission": "community.comments.write"
+        "x-sdkwork-standard-profile": "sdkwork-v3"
       }
     }
   },
