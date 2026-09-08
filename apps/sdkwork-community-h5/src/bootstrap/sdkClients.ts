@@ -8,7 +8,8 @@ import type { SdkworkCommunityAppSdkPort } from '@sdkwork/community-sdk-ports';
 import { createClient as createFeedsOpenClient, type SdkworkFeedsClient } from '@sdkwork/feeds-sdk';
 import { createClient as createOrderAppSdkClient, type SdkworkAppClient } from '@sdkwork/order-app-sdk';
 import { createClient as createIamAppSdkClient, type SdkworkAppClient as SdkworkIamAppClient } from '@sdkwork/iam-app-sdk';
-import type { AuthTokenManager } from '@sdkwork/sdk-common';
+import { resolveBaseUrl } from "@sdkwork/sdk-common";
+import type { AuthTokenManager } from "@sdkwork/sdk-common";
 
 export interface SdkClients {
   appApiBaseUrl: string;
@@ -22,12 +23,10 @@ export interface SdkClients {
 }
 
 function resolveCommunityH5FeedsBaseUrl(): string {
-  const meta = import.meta as ImportMeta & { env?: Record<string, string | undefined> };
-  const explicit = meta.env?.VITE_SDKWORK_COMMUNITY_H5_FEEDS_OPEN_API_BASE_URL;
-  if (typeof explicit === "string" && explicit.trim()) return explicit.trim();
-  // Cloud profiles serve the feeds open surface on the same origin as the
-  // community gateway; standalone dev uses the explicit feeds gateway URL.
-  return "/";
+  // Single shared base-url key; the matching API host is chosen from the
+  // current page's environment+brand. The feeds open client expects a bare
+  // origin, so preservePath stays off.
+  return resolveBaseUrl({ envKey: "SDKWORK_API_BASE_URL" }).url;
 }
 
 export function createSdkClients(tokenManager: AuthTokenManager): SdkClients {
