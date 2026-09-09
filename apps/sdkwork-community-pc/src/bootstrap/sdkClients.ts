@@ -6,14 +6,14 @@ import {
 import { createGeneratedCommunityAppSdkPort } from '@sdkwork/community-runtime';
 import type { SdkworkCommunityAppSdkPort } from '@sdkwork/community-sdk-ports';
 import { createClient as createFeedsOpenClient, type SdkworkFeedsClient } from '@sdkwork/feeds-sdk';
-import { resolveBaseUrl } from "@sdkwork/sdk-common";
-import type { AuthTokenManager } from "@sdkwork/sdk-common";
+import {resolveBaseUrlWithAlignProtocol} from "@sdkwork/sdk-common";
+import {AuthTokenManager} from "@sdkwork/sdk-common";
 
 function resolvePcFeedsBaseUrl(): string {
   // Single shared base-url key; the matching API host is chosen from the
   // current page's environment+brand. The feeds open client expects a bare
   // origin, so preservePath stays off.
-  return resolveBaseUrl({ envKey: "SDKWORK_API_BASE_URL" }).url;
+  return resolveBaseUrlWithAlignProtocol({ envKey: "SDKWORK_API_BASE_URL" }).url;
 }
 
 export interface SdkClients {

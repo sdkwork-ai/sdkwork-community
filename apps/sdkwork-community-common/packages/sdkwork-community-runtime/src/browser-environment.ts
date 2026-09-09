@@ -1,3 +1,4 @@
+import {resolveBaseUrlWithAlignProtocol} from "@sdkwork/sdk-common";
 import { trim } from "@sdkwork/utils";
 
 const DEFAULT_DEVELOPMENT_ORIGIN = "http://127.0.0.1:18094";
@@ -85,17 +86,26 @@ export function resolveCommunityBrowserEnvironment(
     throw new Error(`Community browser runtimeTarget must be browser, received ${runtimeTarget || "empty"}.`);
   }
 
-  const applicationOrigin = optionalString(
+  const applicationOriginEnv = optionalString(
     stringValue(vite.VITE_SDKWORK_COMMUNITY_APPLICATION_PUBLIC_HTTP_URL),
   );
-  const platformOrigin = optionalString(
+  const platformOriginEnv = optionalString(
     stringValue(vite.VITE_SDKWORK_COMMUNITY_PLATFORM_API_GATEWAY_HTTP_URL),
   );
-  if (deploymentProfile === "standalone" && platformOrigin) {
+  if (deploymentProfile === "standalone" && platformOriginEnv) {
     throw new Error(
       "Community standalone runtime must not configure a platform API gateway URL.",
     );
   }
+  // Shared §6.3 defaults (ENVIRONMENT_SPEC.md): authored overrides win; when
+  // absent, resolveBaseUrl derives the application edge (same-origin, page
+  // host) and the cloud platform gateway (api[-<env>].<brand>; pnpm dev
+  // cloud -> the local cloud-gateway dev port) from the current page host,
+  // environment and deployment profile.
+  const applicationOrigin = applicationOriginEnv
+    ?? optionalString(resolveBaseUrlWithAlignProtocol({ mode: "standalone" }).url);
+  const platformOrigin = platformOriginEnv
+    ?? optionalString(resolveBaseUrlWithAlignProtocol({ mode: "cloud" }).url);
   const dependencyOrigin = deploymentProfile === "cloud"
     ? platformOrigin
     : applicationOrigin;
