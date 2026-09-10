@@ -69,3 +69,11 @@ Thumbs.db
 # Runtime-generated env config (modified by local dev server)
 **/public/runtime-env.json
 /bin/
+
+# SDKWork generated SDK artifacts (local regeneration; never committed)
+sdks/**/generated/
+# Compiled JS / type-decl / source-map droppings under SDK families
+sdks/**/*.js
+sdks/**/*.d.ts
+sdks/**/*.js.map
+sdks/**/*.d.ts.map

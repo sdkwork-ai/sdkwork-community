@@ -158,7 +158,7 @@
     "transportEntry": "sdkwork-community-backend-sdk-typescript/generated/server-openapi/src/index.ts"
   },
   "workspace": "sdkwork-community-backend-sdk",
-  "authoritySpec": "../../generated/openapi/community-backend-api.openapi.json",
+  "authoritySpec": "openapi/community-backend-api.openapi.json",
   "derivedSpecs": {
     "default": "../../generated/openapi/community-backend-api.openapi.json"
   },

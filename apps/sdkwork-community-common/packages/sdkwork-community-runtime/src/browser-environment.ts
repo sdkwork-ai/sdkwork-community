@@ -5,7 +5,7 @@ const DEFAULT_DEVELOPMENT_ORIGIN = "http://127.0.0.1:18094";
 const IAM_APP_SDK_FAMILY_ID = "sdkwork-iam-app-sdk";
 const ORDER_APP_SDK_FAMILY_ID = "sdkwork-order-app-sdk";
 
-export type CommunityEnvironmentName = "development" | "test" | "staging" | "production";
+export type CommunityEnvironmentName = "development" | "test" | "staging" | "demo" | "production";
 export type CommunityDeploymentProfile = "standalone" | "cloud";
 
 export interface CommunityBrowserEnvironment {
@@ -179,6 +179,7 @@ function resolveEnvironment(
     normalized === "development"
     || normalized === "test"
     || normalized === "staging"
+    || normalized === "demo"
     || normalized === "production"
   ) {
     return normalized;

@@ -16,6 +16,12 @@
   },
   "dependencies": [
     {
+      "id": "sdkwork-account",
+      "repository": "sdkwork-ai/sdkwork-account",
+      "refInput": "SDKWORK_ACCOUNT_REF",
+      "tokenSecret": "SDKWORK_RELEASE_TOKEN"
+    },
+    {
       "id": "sdkwork-app-topology",
       "repository": "sdkwork-ai/sdkwork-app-topology",
       "ref": "main",
@@ -63,9 +69,21 @@
       "tokenSecret": "SDKWORK_RELEASE_TOKEN"
     },
     {
+      "id": "sdkwork-membership",
+      "repository": "sdkwork-ai/sdkwork-membership",
+      "refInput": "SDKWORK_MEMBERSHIP_REF",
+      "tokenSecret": "SDKWORK_RELEASE_TOKEN"
+    },
+    {
       "id": "sdkwork-order",
       "repository": "sdkwork-ai/sdkwork-order",
       "refInput": "SDKWORK_ORDER_REF",
+      "tokenSecret": "SDKWORK_RELEASE_TOKEN"
+    },
+    {
+      "id": "sdkwork-payment",
+      "repository": "sdkwork-ai/sdkwork-payment",
+      "refInput": "SDKWORK_PAYMENT_REF",
       "tokenSecret": "SDKWORK_RELEASE_TOKEN"
     },
     {
