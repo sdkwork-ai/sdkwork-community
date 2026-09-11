@@ -70,7 +70,6 @@ Thumbs.db
 **/public/runtime-env.json
 
 # SDKWork generated SDK artifacts (local regeneration; never committed)
-sdks/**/generated/
 # Compiled JS / type-decl / source-map droppings under SDK families
 sdks/**/*.js
 sdks/**/*.d.ts
