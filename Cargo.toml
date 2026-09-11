@@ -19,12 +19,33 @@ members = [
 resolver = "2"
 
 [workspace.package]
+rust-version = "1.85"
 edition = "2021"
 version = "0.1.0"
 license = "AGPL-3.0-or-later"
 publish = false
 
+[workspace.lints.rust]
+# RUST_CODE_SPEC.md section 13 baseline.
+# Deny-tier lints (unsafe_code, panic, unwrap_used, expect_used, pedantic) are
+# promoted per crate together with their cleanup: enabling them fleet-wide
+# today floods or fails builds that have not paid that debt yet.
+unsafe_op_in_unsafe_fn = "warn"
+trivial_casts = "warn"
+trivial_numeric_casts = "warn"
+
+[workspace.lints.clippy]
+dbg_macro = "warn"
+todo = "warn"
+unimplemented = "warn"
+exit = "warn"
+
 [workspace.dependencies]
+sdkwork-content-feeds-service = { path = "../sdkwork-feeds/crates/sdkwork-content-feeds-service" }
+sdkwork-content-feeds-core-rust = { path = "../sdkwork-feeds/crates/sdkwork-content-feeds-core-rust" }
+sdkwork-order-service = { path = "../sdkwork-order/crates/sdkwork-order-service" }
+sdkwork-order-repository-sqlx = { path = "../sdkwork-order/crates/sdkwork-order-repository-sqlx" }
+sdkwork-membership-repository-sqlx = { path = "../sdkwork-membership/crates/sdkwork-membership-repository-sqlx" }
 axum = "0.8"
 tokio = { version = "1.51", features = ["macros", "rt-multi-thread", "net", "sync", "signal"] }
 serde = { version = "1", features = ["derive"] }

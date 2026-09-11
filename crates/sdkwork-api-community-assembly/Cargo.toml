@@ -1,10 +1,14 @@
 [package]
+rust-version.workspace = true
 name = "sdkwork-api-community-assembly"
 edition.workspace = true
 license.workspace = true
 version.workspace = true
 description = "Generated API assembly for sdkwork-community application HTTP plane."
 
+
+[lints]
+workspace = true
 [lib]
 name = "sdkwork_api_community_assembly"
 path = "src/lib.rs"

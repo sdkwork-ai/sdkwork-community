@@ -1,8 +1,12 @@
 [package]
+rust-version.workspace = true
 name = "sdkwork-community-http-rust"
 version.workspace = true
 edition.workspace = true
 
+
+[lints]
+workspace = true
 [lib]
 name = "sdkwork_community_http"
 path = "src/lib.rs"

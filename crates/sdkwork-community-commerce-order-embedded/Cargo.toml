@@ -1,10 +1,14 @@
 [package]
+rust-version.workspace = true
 name = "sdkwork-community-commerce-order-embedded"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 publish.workspace = true
 
+
+[lints]
+workspace = true
 [lib]
 path = "src/lib.rs"
 
@@ -14,5 +18,5 @@ sdkwork-database-sqlx.workspace = true
 # Order is the dependency application; this consumer-side L4 adapter
 # composes its public repository surface in-process (embedded same-process
 # deployment) instead of the generated SDK HTTP client.
-sdkwork-order-repository-sqlx = { path = "../../../sdkwork-order/crates/sdkwork-order-repository-sqlx" }
-sdkwork-order-service = { path = "../../../sdkwork-order/crates/sdkwork-order-service" }
+sdkwork-order-repository-sqlx = { workspace = true }
+sdkwork-order-service = { workspace = true }

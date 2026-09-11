@@ -1,4 +1,5 @@
 [package]
+rust-version.workspace = true
 name = "sdkwork-api-community-standalone-gateway"
 version.workspace = true
 edition.workspace = true
@@ -9,6 +10,9 @@ publish = false
 name = "sdkwork-api-community-standalone-gateway"
 path = "src/main.rs"
 
+
+[lints]
+workspace = true
 [dependencies]
 axum.workspace = true
 sdkwork-api-community-assembly.workspace = true
