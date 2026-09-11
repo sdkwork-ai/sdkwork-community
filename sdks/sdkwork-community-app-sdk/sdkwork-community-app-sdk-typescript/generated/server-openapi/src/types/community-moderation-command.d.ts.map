@@ -1,0 +1,1 @@
+{"version":3,"file":"community-moderation-command.d.ts","sourceRoot":"","sources":["community-moderation-command.ts"],"names":[],"mappings":"AAAA,OAAO,KAAK,EAAE,oBAAoB,EAAE,MAAM,0BAA0B,CAAC;AAErE,MAAM,WAAW,0BAA0B;IACzC,WAAW,EAAE,oBAAoB,CAAC;IAClC,MAAM,CAAC,EAAE,MAAM,CAAC;CACjB"}
