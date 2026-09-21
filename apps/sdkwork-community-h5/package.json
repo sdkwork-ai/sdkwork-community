@@ -33,6 +33,7 @@
     "@sdkwork/community-sdk-ports": "workspace:*",
     "@sdkwork/community-service": "workspace:*",
     "@sdkwork/iam-app-sdk": "workspace:*",
+    "@sdkwork/iam-credential-entry": "workspace:*",
     "@sdkwork/order-app-sdk": "workspace:*",
     "@sdkwork/order-mobile-react-orders": "workspace:*",
     "@sdkwork/sdk-common": "workspace:*",
