@@ -2,6 +2,10 @@ import { useTranslation } from "react-i18next";
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router";
 import { CommunityService } from "../services/CommunityService";
+import {
+  getCommunityMediaRuntime,
+  isCommunityMediaRuntimeConfigured,
+} from "../services/communityMediaRuntimePort";
 import { Community } from "../types";
 import { cn, IconButton, showToast } from "@sdkwork/ui-mobile-react";
 import { ChevronLeft, Camera, Image as ImageIcon } from "lucide-react";
@@ -19,7 +23,7 @@ const createImage = (url: string) =>
 async function getCroppedImg(
   imageSrc: string,
   pixelCrop: { x: number; y: number; width: number; height: number }
-): Promise<string> {
+): Promise<{ previewUrl: string; file: File }> {
   const image = await createImage(imageSrc)
   const canvas = document.createElement('canvas')
   const ctx = canvas.getContext('2d')
@@ -51,9 +55,13 @@ async function getCroppedImg(
   )
 
   return new Promise((resolve, reject) => {
-    croppedCanvas.toBlob((file) => {
-      if (file) {
-        resolve(URL.createObjectURL(file))
+    croppedCanvas.toBlob((blob) => {
+      if (blob) {
+        // Local preview plus the bytes the media port uploads on save.
+        resolve({
+          previewUrl: URL.createObjectURL(blob),
+          file: new File([blob], 'crop.jpg', { type: 'image/jpeg' }),
+        })
       } else {
         reject(new Error('Canvas is empty'))
       }
@@ -80,6 +88,8 @@ const { id } = useParams<{ id: string }>();
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null);
+  const [croppedFile, setCroppedFile] = useState<File | null>(null);
+  const [displayUrl, setDisplayUrl] = useState<string | null>(null);
 
   const isAvatar = field === 'avatar';
 
@@ -88,8 +98,17 @@ const { id } = useParams<{ id: string }>();
       CommunityService.getCommunityById(id).then(c => {
         if (c) {
           setCommunity(c);
-          setImageUrl(c[field] || "");
-          setOriginalUrl(c[field] || "");
+          const stored = c[field] || "";
+          setImageUrl(stored);
+          setOriginalUrl(stored);
+          if (stored.startsWith('drive://') && isCommunityMediaRuntimeConfigured()) {
+            const port = getCommunityMediaRuntime();
+            port.resolveDisplayUrl?.(stored).then(url => {
+              if (url) {
+                setDisplayUrl(url);
+              }
+            }).catch(() => setDisplayUrl(null));
+          }
         }
       });
     }
@@ -99,10 +118,22 @@ const { id } = useParams<{ id: string }>();
 
   const handleSave = async () => {
     if (!id || !community || !hasChanged) return;
+    if (croppedFile && !isCommunityMediaRuntimeConfigured()) {
+      showToast(t('community.auto_media_port_missing', '当前宿主未配置图片上传，无法保存'));
+      return;
+    }
 
     setIsSaving(true);
     try {
-       await CommunityService.updateCommunity(id, { [field]: imageUrl });
+       let storedValue = imageUrl;
+       if (croppedFile) {
+         const urls = await getCommunityMediaRuntime().uploadImages([croppedFile]);
+         storedValue = urls[0] ?? '';
+         if (!storedValue) {
+           throw new Error('image upload returned no URL');
+         }
+       }
+       await CommunityService.updateCommunity(id, { [field]: storedValue });
        showToast(t('community.auto_fn_25b0deea', '保存成功'));
        navigate(-1);
     } catch {
@@ -141,8 +172,9 @@ const { id } = useParams<{ id: string }>();
 
   const handleConfirmCrop = async () => {
     try {
-      const croppedImage = await getCroppedImg(cropImageUrl, croppedAreaPixels);
-      setImageUrl(croppedImage);
+      const cropped = await getCroppedImg(cropImageUrl, croppedAreaPixels);
+      setCroppedFile(cropped.file);
+      setImageUrl(cropped.previewUrl);
       setIsCropping(false);
     } catch (e) {
       console.error(e)
@@ -218,7 +250,7 @@ const { id } = useParams<{ id: string }>();
           {/* Ambient blurred background */}
           {imageUrl ? (
              <div className="absolute inset-0 overflow-hidden z-0">
-                <img src={imageUrl} alt="" className="w-full h-full object-cover opacity-20 blur-[60px] scale-125" />
+                <img src={displayUrl ?? imageUrl} alt="" className="w-full h-full object-cover opacity-20 blur-[60px] scale-125" />
              </div>
           ) : (
              <div className="absolute inset-0 bg-[#0a0a0a] z-0" />
@@ -232,7 +264,7 @@ const { id } = useParams<{ id: string }>();
              )}
              onClick={handleUploadClick}>
                 {imageUrl ? (
-                   <img src={imageUrl} alt="Preview" className="w-full h-full object-cover" />
+                   <img src={displayUrl ?? imageUrl} alt="Preview" className="w-full h-full object-cover" />
                 ) : (
                    <div className="flex flex-col items-center gap-3">
                       <ImageIcon className="w-12 h-12 text-white/20" />

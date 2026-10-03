@@ -11,6 +11,12 @@
 export interface CommunityMediaRuntimePort {
   /** Uploads images and returns their backend-addressable URLs. */
   uploadImages(files: File[]): Promise<string[]>;
+  /**
+   * Transient display URL for a stored media URI (drive:// URIs need a
+   * bounded host-side read; http(s) URLs resolve to themselves). Optional:
+   * hosts that never store drive-backed media may omit it.
+   */
+  resolveDisplayUrl?(uri: string): Promise<string | null>;
 }
 
 let mediaRuntimePort: CommunityMediaRuntimePort | null = null;

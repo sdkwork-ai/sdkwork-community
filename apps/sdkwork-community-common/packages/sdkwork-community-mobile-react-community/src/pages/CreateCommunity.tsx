@@ -2,6 +2,10 @@ import { useTranslation } from "react-i18next";
 import React, { useState, useRef } from "react";
 import { useNavigate } from "react-router";
 import { CommunityService } from "../services/CommunityService";
+import {
+  getCommunityMediaRuntime,
+  isCommunityMediaRuntimeConfigured,
+} from "../services/communityMediaRuntimePort";
 import { cn, IconButton, showToast } from "@sdkwork/ui-mobile-react";
 import { ChevronLeft, Camera, ImagePlus } from "lucide-react";
 
@@ -18,14 +22,15 @@ const navigate = useNavigate();
   const [memberLimit, setMemberLimit] = useState("");
   const [revenueTarget, setRevenueTarget] = useState("");
   const [coverImage, setCoverImage] = useState<string | null>(null);
+  const [coverFile, setCoverFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
   const file = e.target.files?.[0];
     if (file) {
-      // Create a local preview URL
-      const url = URL.createObjectURL(file);
-      setCoverImage(url);
+      // Local preview only; the file uploads through the media port on submit.
+      setCoverFile(file);
+      setCoverImage(URL.createObjectURL(file));
     }
   };
 
@@ -33,13 +38,25 @@ const navigate = useNavigate();
     if (!name.trim()) return showToast(t('community.auto_fn_n4fe6e34c', '请输入圈子名称'));
     if (!coverImage) return showToast(t('community.auto_fn_n44a9732a', '请上传圈子封面'));
     
+    if (coverFile && !isCommunityMediaRuntimeConfigured()) {
+      return showToast(t('community.auto_media_port_missing', '当前宿主未配置图片上传，无法创建带封面的圈子'));
+    }
+
     setIsSubmitting(true);
     try {
+      let storedCoverImage: string | null = null;
+      if (coverFile) {
+        const urls = await getCommunityMediaRuntime().uploadImages([coverFile]);
+        storedCoverImage = urls[0] ?? null;
+        if (!storedCoverImage) {
+          throw new Error('cover upload returned no URL');
+        }
+      }
       const payload = {
         name,
         description,
         tags: tags.split(" ").filter(t => t.trim()),
-        coverImage: coverImage,
+        coverImage: storedCoverImage,
         isPaid,
         memberLimit: memberLimit.trim() ? Number(memberLimit) : undefined,
         revenueTarget: revenueTarget.trim() ? Number(revenueTarget) : undefined,
