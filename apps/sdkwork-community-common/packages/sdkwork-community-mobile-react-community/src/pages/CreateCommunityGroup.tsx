@@ -3,6 +3,10 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router";
 import { CommunityService } from "../services/CommunityService";
 import { CommunityGroup, QRCodeItem } from "../types";
+import {
+  getCommunityMediaRuntime,
+  isCommunityMediaRuntimeConfigured,
+} from "../services/communityMediaRuntimePort";
 import { cn, IconButton, showToast } from "@sdkwork/ui-mobile-react";
 import { ChevronLeft, Plus, X, UploadCloud, MessageSquare } from "lucide-react";
 
@@ -16,6 +20,37 @@ const { id, groupId } = useParams<{ id: string, groupId?: string }>();
   const [qrCodes, setQrCodes] = useState<QRCodeItem[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(!!groupId);
+  // Group QR codes upload through the host media runtime port (drive-backed,
+  // the same channel posts use) instead of being read as base64 data URLs.
+  // Hosts without the port hide the pick affordances; stored drive:// codes
+  // resolve their display through the port's bounded preview reader.
+  const mediaUploadEnabled = isCommunityMediaRuntimeConfigured();
+  const [qrDisplayUrls, setQrDisplayUrls] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    const driveUris = Array.from(new Set(qrCodes.map((qr) => qr.url).filter((url) => url.startsWith('drive://'))));
+    if (!mediaUploadEnabled || driveUris.length === 0) {
+      setQrDisplayUrls({});
+      return;
+    }
+    let cancelled = false;
+    const mediaRuntime = getCommunityMediaRuntime();
+    void Promise.all(driveUris.map(async (uri) => [uri, await mediaRuntime.resolveDisplayUrl?.(uri)] as const))
+      .then((entries) => {
+        if (cancelled) return;
+        const resolved: Record<string, string> = {};
+        for (const [uri, url] of entries) {
+          if (url) resolved[uri] = url;
+        }
+        setQrDisplayUrls(resolved);
+      })
+      .catch(() => {
+        if (!cancelled) setQrDisplayUrls({});
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [qrCodes, mediaUploadEnabled]);
 
   const isEditMode = !!groupId;
 
@@ -43,19 +78,29 @@ const { id, groupId } = useParams<{ id: string, groupId?: string }>();
   };
 
   const handleAddQr = () => {
+    if (!isCommunityMediaRuntimeConfigured()) {
+      // No host media runtime: there is deliberately no local data-URL
+      // fallback — persisting a base64 payload would be a fake upload
+      // (`DRIVE_SPEC.md` section 18).
+      showToast(t('community.auto_media_unavailable', '媒体上传不可用：需要宿主提供存储能力'));
+      return;
+    }
   const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'image/*';
     input.onchange = (e) => {
       const file = (e.target as HTMLInputElement).files?.[0];
       if (file) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          if (e.target?.result) {
-            setQrCodes(prev => [...prev, { url: e.target!.result as string, description: '' }]);
-          }
-        };
-        reader.readAsDataURL(file);
+        void getCommunityMediaRuntime()
+          .uploadImages([file])
+          .then(([url]) => {
+            if (url) {
+              setQrCodes(prev => [...prev, { url, description: '' }]);
+            }
+          })
+          .catch(() => {
+            showToast(t('community.auto_media_upload_failed', '二维码上传失败，请重试'));
+          });
       }
     };
     input.click();
@@ -173,7 +218,7 @@ const { id, groupId } = useParams<{ id: string, groupId?: string }>();
               {qrCodes.map((qr, index) => (
                  <div key={index} className="flex gap-3 bg-[#f8f9fa] dark:bg-[#2C2C2E] p-3 rounded-2xl relative border border-transparent focus-within:border-blue-500 transition-colors">
                     <div className="w-[100px] h-[100px] relative shrink-0 rounded-xl overflow-hidden bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5">
-                       <img src={qr.url} alt="" className="w-full h-full object-cover" />
+                       <img src={qrDisplayUrls[qr.url] ?? qr.url} alt="" className="w-full h-full object-cover" />
                        <button 
                          onClick={() => handleRemoveQr(index)}
                          className="absolute right-1 top-1 w-6 h-6 bg-black/40 text-white rounded-full flex items-center justify-center backdrop-blur-md"
