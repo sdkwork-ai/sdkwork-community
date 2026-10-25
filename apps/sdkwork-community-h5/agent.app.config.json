@@ -1,24 +1,24 @@
 {
   "schemaVersion": 3,
-  "kind": "sdkwork.app",
+  "kind": "agent.app",
   "app": {
-    "key": "sdkwork-community-pc",
-    "name": "SDKWork Community PC",
-    "displayName": "SDKWork Community",
-    "description": "SDKWork Community React web client.",
+    "key": "sdkwork-community-h5",
+    "name": "SDKWork Community H5",
+    "displayName": "SDKWork Community H5",
+    "description": "SDKWork Community React H5 client.",
     "officialWebsiteUrl": "https://sdkwork.com/apps/sdkwork-community",
     "appType": "APP_REACT",
     "versionSource": "package.json",
     "identifiers": {
-      "packageName": "com.sdkwork.community.pc",
-      "bundleId": "com.sdkwork.community.pc"
+      "packageName": "com.sdkwork.community.h5",
+      "bundleId": "com.sdkwork.community.h5"
     }
   },
   "backend": {
     "profileKey": "backend-root-admin",
     "ownerMode": "tenant",
     "grantMode": "current",
-    "platform": "WEB",
+    "platform": "H5",
     "appId": "sdkwork-community",
     "organizationId": "0",
     "tenantId": "100001",
@@ -33,15 +33,15 @@
     ]
   },
   "runtime": {
-    "family": "web",
-    "framework": "react",
+    "family": "mobile",
+    "framework": "react-h5",
     "runtimes": [
-      "WEB"
+      "H5"
     ],
     "deliveryModes": [
       "WEB_URL"
     ],
-    "defaultPlatform": "WEB",
+    "defaultPlatform": "H5",
     "defaultArchitecture": "universal",
     "supportedDeploymentProfiles": [
       "standalone",
@@ -52,10 +52,10 @@
   "media": {
     "icons": {
       "primary": {
-        "id": "sdkwork-community-pc-primary-icon",
+        "id": "sdkwork-community-h5-primary-icon",
         "type": "ICON",
         "purpose": "PRIMARY",
-        "platform": "WEB",
+        "platform": "H5",
         "format": "PNG",
         "width": 1024,
         "height": 1024,
@@ -72,10 +72,10 @@
   "publish": {
     "status": "DRAFT",
     "platforms": [
-      "WEB"
+      "H5"
     ],
     "installPlatforms": [
-      "WEB"
+      "H5"
     ],
     "installSkill": false
   },
@@ -83,8 +83,8 @@
     "installConfig": {
       "packages": [],
       "metadata": {
-        "workspaceRoot": "apps/sdkwork-community-pc",
-        "framework": "react",
+        "workspaceRoot": "apps/sdkwork-community-h5",
+        "framework": "react-h5",
         "packageManager": "pnpm"
       }
     }
@@ -100,7 +100,7 @@
         "version": "0.1.0",
         "channel": "BETA",
         "current": true,
-        "summary": "Initial SDKWork App Standard v3 Community PC declaration.",
+        "summary": "Initial SDKWork App Standard v3 Community H5 declaration.",
         "packageIds": []
       }
     ]

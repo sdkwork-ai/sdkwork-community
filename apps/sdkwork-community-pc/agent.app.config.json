@@ -1,24 +1,24 @@
 {
   "schemaVersion": 3,
-  "kind": "sdkwork.app",
+  "kind": "agent.app",
   "app": {
-    "key": "sdkwork-community-flutter-mobile",
-    "name": "SDKWork Community Flutter Mobile",
-    "displayName": "SDKWork Community Mobile",
-    "description": "SDKWork Community Flutter client for Android and iOS.",
+    "key": "sdkwork-community-pc",
+    "name": "SDKWork Community PC",
+    "displayName": "SDKWork Community",
+    "description": "SDKWork Community React web client.",
     "officialWebsiteUrl": "https://sdkwork.com/apps/sdkwork-community",
-    "appType": "APP_FLUTTER",
-    "versionSource": "pubspec.yaml",
+    "appType": "APP_REACT",
+    "versionSource": "package.json",
     "identifiers": {
-      "packageName": "com.sdkwork.community.flutter",
-      "bundleId": "com.sdkwork.community.flutter"
+      "packageName": "com.sdkwork.community.pc",
+      "bundleId": "com.sdkwork.community.pc"
     }
   },
   "backend": {
     "profileKey": "backend-root-admin",
     "ownerMode": "tenant",
     "grantMode": "current",
-    "platform": "APP",
+    "platform": "WEB",
     "appId": "sdkwork-community",
     "organizationId": "0",
     "tenantId": "100001",
@@ -33,16 +33,15 @@
     ]
   },
   "runtime": {
-    "family": "mobile",
-    "framework": "flutter",
+    "family": "web",
+    "framework": "react",
     "runtimes": [
-      "APP_ANDROID",
-      "APP_IOS"
+      "WEB"
     ],
     "deliveryModes": [
-      "DIRECT_DOWNLOAD"
+      "WEB_URL"
     ],
-    "defaultPlatform": "APP_ANDROID",
+    "defaultPlatform": "WEB",
     "defaultArchitecture": "universal",
     "supportedDeploymentProfiles": [
       "standalone",
@@ -53,10 +52,10 @@
   "media": {
     "icons": {
       "primary": {
-        "id": "sdkwork-community-flutter-mobile-primary-icon",
+        "id": "sdkwork-community-pc-primary-icon",
         "type": "ICON",
         "purpose": "PRIMARY",
-        "platform": "APP",
+        "platform": "WEB",
         "format": "PNG",
         "width": 1024,
         "height": 1024,
@@ -73,12 +72,10 @@
   "publish": {
     "status": "DRAFT",
     "platforms": [
-      "APP_ANDROID",
-      "APP_IOS"
+      "WEB"
     ],
     "installPlatforms": [
-      "APP_ANDROID",
-      "APP_IOS"
+      "WEB"
     ],
     "installSkill": false
   },
@@ -86,9 +83,9 @@
     "installConfig": {
       "packages": [],
       "metadata": {
-        "workspaceRoot": "apps/sdkwork-community-flutter-mobile",
-        "framework": "flutter",
-        "packageManager": "flutter"
+        "workspaceRoot": "apps/sdkwork-community-pc",
+        "framework": "react",
+        "packageManager": "pnpm"
       }
     }
   },
@@ -103,7 +100,7 @@
         "version": "0.1.0",
         "channel": "BETA",
         "current": true,
-        "summary": "Initial SDKWork App Standard v3 Community Flutter declaration.",
+        "summary": "Initial SDKWork App Standard v3 Community PC declaration.",
         "packageIds": []
       }
     ]

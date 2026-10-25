@@ -35,7 +35,7 @@ This is a Flutter mobile application root for the community product. It follows 
 ## Local Dictionary Structure
 
 - `AGENTS.md`: local agent entrypoint and relative SDKWORK spec index.
-- `sdkwork.app.config.json`: application manifest for Flutter mobile deployment.
+- `agent.app.config.json`: application manifest for Flutter mobile deployment.
 - `etc/`: deployable-root source configuration and typed runtime profiles.
 - `.sdkwork/`: reserved local dictionary folder for local skills, plugins, manifests, or AI workspace metadata.
 - `specs/`: local component/application specs that extend root standards.
@@ -49,13 +49,13 @@ This is a Flutter mobile application root for the community product. It follows 
 Use dynamic progressive loading for the current task: resolve the selected root and task category before reading broad source context.
 
 1. Read this `AGENTS.md` routing material and classify the owned surface.
-2. Read `sdkwork.app.config.json`, module `specs/`, repository/application `specs/`, and `.sdkwork/` only when the task reaches the contract each item governs.
+2. Read `agent.app.config.json`, module `specs/`, repository/application `specs/`, and `.sdkwork/` only when the task reaches the contract each item governs.
 3. Locate only the relevant task-matrix row or navigation heading in `../../../sdkwork-specs/README.md`; do not load the full catalog.
 4. Read only the task-specific global spec sections selected by that route, then inspect implementation files.
 <!-- /SDKWORK-PROGRESSIVE-LOADING: v1 -->
 
 1. Read this `AGENTS.md` and any nearer component-level `AGENTS.md`.
-2. Read `sdkwork.app.config.json` when present.
+2. Read `agent.app.config.json` when present.
 3. Read local `specs/README.md` and `specs/component.spec.json` when present.
 4. Read local `.sdkwork/README.md`, `.sdkwork/skills/`, and `.sdkwork/plugins/` when relevant.
 5. Read `../../../sdkwork-specs/README.md` and the task-specific root specs.

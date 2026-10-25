@@ -2,7 +2,7 @@
 
 `sdkwork.deployment.config.json` is the source profile index for the SDKWork Community application.
 It selects safe, source-controlled profiles under `topology/`; `specs/topology.spec.json` defines the
-allowed topology and `sdkwork.app.config.json` defines application and release identity.
+allowed topology and `agent.app.config.json` defines application and release identity.
 
 Supported profiles are `standalone.development`, `standalone.production`, `cloud.development`, and
 `cloud.production`. Local development defaults to `standalone.development`. Profile values are
