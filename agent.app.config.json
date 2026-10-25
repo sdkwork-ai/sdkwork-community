@@ -153,6 +153,6 @@
   "metadata": {
     "deploymentConfig": "etc/sdkwork.deployment.config.json",
     "componentSpec": "specs/component.spec.json",
-    "workflowManifest": "sdkwork.workflow.json"
+    "workflowManifest": "agent.workflow.json"
   }
 }

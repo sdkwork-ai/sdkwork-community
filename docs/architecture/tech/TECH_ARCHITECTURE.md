@@ -84,7 +84,7 @@ Deployment handoff:
 
 - `deployments/deploy.yaml` — standalone API profile for local and binary-package production
 - `pnpm deploy:plan` / `pnpm deploy:validate` — deployctl alignment checks
-- `sdkwork.workflow.json` — CI/release lifecycle and sibling dependency materialization
+- `agent.workflow.json` — CI/release lifecycle and sibling dependency materialization
 - `.github/workflows/governance.yml` — runs `pnpm verify` on push/PR
 - [Community production gateway runbook](../../runbooks/RUNBOOK-community-production-gateway.md)
 

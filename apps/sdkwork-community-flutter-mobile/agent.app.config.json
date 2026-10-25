@@ -116,6 +116,6 @@
   "metadata": {
     "standardOwner": "sdkwork-community",
     "deploymentConfig": "etc/sdkwork.deployment.config.json",
-    "releaseAuthority": "../../sdkwork.workflow.json"
+    "releaseAuthority": "../../agent.workflow.json"
   }
 }
