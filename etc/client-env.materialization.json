@@ -67,7 +67,21 @@
         "VITE_SDKWORK_DEPLOYMENT_PROFILE",
         "VITE_SDKWORK_PROFILE_ID",
         "VITE_SDKWORK_RUNTIME_TARGET"
-      ]
+      ],
+      "accessToken": {
+        "appId": "sdkwork-community",
+        "tenantId": "100001",
+        "organizationId": "0",
+        "permissionScope": [
+          "community.categories.read",
+          "community.entries.read",
+          "community.entries.write",
+          "community.comments.read",
+          "community.comments.write",
+          "community.reactions.write",
+          "community.recommendations.read"
+        ]
+      }
     },
     {
       "id": "sdkwork-community-pc",
@@ -105,7 +119,21 @@
         "VITE_SDKWORK_DEPLOYMENT_PROFILE",
         "VITE_SDKWORK_PROFILE_ID",
         "VITE_SDKWORK_RUNTIME_TARGET"
-      ]
+      ],
+      "accessToken": {
+        "appId": "sdkwork-community",
+        "tenantId": "100001",
+        "organizationId": "0",
+        "permissionScope": [
+          "community.categories.read",
+          "community.entries.read",
+          "community.entries.write",
+          "community.comments.read",
+          "community.comments.write",
+          "community.reactions.write",
+          "community.recommendations.read"
+        ]
+      }
     }
   ]
 }
