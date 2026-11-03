@@ -134,6 +134,21 @@
           "community.recommendations.read"
         ]
       }
+    },
+    {
+      "id": "sdkwork-community-flutter-mobile",
+      "root": "apps/sdkwork-community-flutter-mobile",
+      "format": "flutter",
+      "runtimeTarget": "flutter-android",
+      "bindings": {},
+      "accessToken": {
+        "appId": "sdkwork-community",
+        "tenantId": "100001",
+        "organizationId": "0",
+        "permissionScope": [
+          "iam:self"
+        ]
+      }
     }
   ]
 }
