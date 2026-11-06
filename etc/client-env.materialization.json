@@ -73,13 +73,7 @@
         "tenantId": "100001",
         "organizationId": "0",
         "permissionScope": [
-          "community.categories.read",
-          "community.entries.read",
-          "community.entries.write",
-          "community.comments.read",
-          "community.comments.write",
-          "community.reactions.write",
-          "community.recommendations.read"
+          "iam:self"
         ]
       }
     },
@@ -125,13 +119,7 @@
         "tenantId": "100001",
         "organizationId": "0",
         "permissionScope": [
-          "community.categories.read",
-          "community.entries.read",
-          "community.entries.write",
-          "community.comments.read",
-          "community.comments.write",
-          "community.reactions.write",
-          "community.recommendations.read"
+          "iam:self"
         ]
       }
     },
