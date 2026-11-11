@@ -12,6 +12,10 @@
       "envVar": "SDKWORK_ORDER_BACKEND_API_BASE_URL",
       "module": "order",
       "reason": "Opt-in split deployment only: the base URL is unset by default, which keeps the in-process embedded order payment verifier. When it is set, CommerceIntegrationConfig::from_env() refuses to start unless SDKWORK_ORDER_BACKEND_AUTH_TOKEN and SDKWORK_ORDER_BACKEND_ACCESS_TOKEN are both present; there is no HTTP default."
+    },
+    {
+      "file": "crates/sdkwork-community-service/src/integration/commerce_http.rs",
+      "reason": "Explicit HTTP opt-in, default is in-process, startup-validated. File-scoped entry for the second detection mode: the file builds the reqwest commerce client and names /backend/v3/api only for the split-deployment adapters selected by SDKWORK_MEMBERSHIP_BACKEND_API_BASE_URL / SDKWORK_ORDER_BACKEND_API_BASE_URL. The default is the embedded membership/order adapters on the shared pool, and CommerceIntegrationConfig::from_env() refuses to start when a base URL is set without both tokens."
     }
   ]
 }
