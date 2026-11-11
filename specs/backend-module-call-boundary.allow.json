@@ -1,0 +1,17 @@
+{
+  "comment": "Deliberate exceptions to MODULE_SPEC.md section 4.2 (backend module call boundary). The community module reaches sdkwork-membership and sdkwork-order in-process by default through the embedded service/repository adapters on the shared PostgreSQL pool. Only a deliberate split deployment opts into HTTP, and that adapter fails at host startup when its dual-token credentials are missing.",
+  "allow": [
+    {
+      "file": "crates/sdkwork-community-service/src/integration/commerce_http.rs",
+      "envVar": "SDKWORK_MEMBERSHIP_BACKEND_API_BASE_URL",
+      "module": "membership",
+      "reason": "Opt-in split deployment only: the base URL is unset by default, which keeps the in-process embedded membership publisher. When it is set, CommerceIntegrationConfig::from_env() refuses to start unless SDKWORK_MEMBERSHIP_BACKEND_AUTH_TOKEN and SDKWORK_MEMBERSHIP_BACKEND_ACCESS_TOKEN are both present; there is no HTTP default."
+    },
+    {
+      "file": "crates/sdkwork-community-service/src/integration/commerce_http.rs",
+      "envVar": "SDKWORK_ORDER_BACKEND_API_BASE_URL",
+      "module": "order",
+      "reason": "Opt-in split deployment only: the base URL is unset by default, which keeps the in-process embedded order payment verifier. When it is set, CommerceIntegrationConfig::from_env() refuses to start unless SDKWORK_ORDER_BACKEND_AUTH_TOKEN and SDKWORK_ORDER_BACKEND_ACCESS_TOKEN are both present; there is no HTTP default."
+    }
+  ]
+}

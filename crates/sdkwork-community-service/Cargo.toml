@@ -22,3 +22,6 @@ sdkwork-community-storage-sqlx-rust.workspace = true
 sdkwork-id-core.workspace = true
 sdkwork-utils-rust.workspace = true
 thiserror.workspace = true
+
+[dev-dependencies]
+tokio.workspace = true

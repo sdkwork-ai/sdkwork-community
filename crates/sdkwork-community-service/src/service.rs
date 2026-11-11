@@ -13,7 +13,7 @@ use sdkwork_utils_rust::{slugify, validated_offset_list_params};
 
 use crate::error::CommunityServiceError;
 use crate::integration::{
-    CommerceIntegration, CommerceIntegrationConfig, MembershipPackageRegistration,
+    CommerceIntegration, CommerceIntegrationConfig, CommerceScope, MembershipPackageRegistration,
 };
 
 #[derive(Debug, Clone)]
@@ -226,6 +226,25 @@ pub const OFFICIAL_CIRCLE_OPERATOR_USER_ID: &str = "sdkwork-official";
 /// membership backends require a finite positive duration).
 pub const LIFETIME_MEMBERSHIP_DURATION_DAYS: i64 = 36500;
 
+/// Longest term a paid tier may grant. A tier's `duration_days` is stored
+/// without an upper bound, so anything beyond the 100-year lifetime term is
+/// clamped before calendar arithmetic.
+const MAX_MEMBERSHIP_DURATION_DAYS: i64 = LIFETIME_MEMBERSHIP_DURATION_DAYS;
+
+/// Membership expiry for a tier term, anchored at `now`.
+///
+/// Never panics on a stored tier term (`RUST_CODE_SPEC.md` section 7): a
+/// non-positive term expires immediately, a term beyond
+/// [`MAX_MEMBERSHIP_DURATION_DAYS`] is clamped, and a calendar date
+/// `chrono` cannot represent falls back to `now` instead of overflowing.
+fn membership_expires_at(now: chrono::DateTime<Utc>, duration_days: i64) -> String {
+    let bounded = duration_days.clamp(0, MAX_MEMBERSHIP_DURATION_DAYS);
+    chrono::Duration::try_days(bounded)
+        .and_then(|term| now.checked_add_signed(term))
+        .unwrap_or(now)
+        .to_rfc3339()
+}
+
 /// Command to activate a paid circle membership after order payment.
 #[derive(Debug, Clone, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -302,8 +321,11 @@ impl CommunityService {
     pub fn new(store: Arc<CommunitySqlxStore>) -> Self {
         Self::with_commerce(
             store,
+            // Default transport: in-process (MODULE_SPEC.md section 4.2).
+            // Runtime hosts resolve the environment through
+            // `CommerceIntegration::from_env` and wire the embedded ports.
             Arc::new(CommerceIntegration::new(
-                CommerceIntegrationConfig::from_env(),
+                CommerceIntegrationConfig::in_process(),
             )),
         )
     }
@@ -316,7 +338,10 @@ impl CommunityService {
     }
 
     /// Builds a service with a host-provided snowflake generator and the
-    /// environment-configured commerce integration (runtime host path).
+    /// in-process commerce default. Runtime hosts that need the environment
+    /// transport selection build their own [`CommerceIntegration`] through
+    /// [`CommerceIntegration::from_env`] and pass it to
+    /// [`CommunityService::with_id_generator`].
     pub fn with_runtime_id_generator(
         store: Arc<CommunitySqlxStore>,
         id_generator: Arc<dyn IdGenerator>,
@@ -324,7 +349,7 @@ impl CommunityService {
         Self::with_id_generator(
             store,
             Arc::new(CommerceIntegration::new(
-                CommerceIntegrationConfig::from_env(),
+                CommerceIntegrationConfig::in_process(),
             )),
             id_generator,
         )
@@ -1518,25 +1543,39 @@ impl CommunityService {
             .await
             .map_err(|error| CommunityServiceError::Storage(error.to_string()))?;
         let mut published = 0usize;
-        for category in categories {
-            let tiers = self
-                .list_tiers(&category.tenant_id, &category.id, false)
-                .await?;
-            for tier in tiers {
-                if tier.enabled
-                    && tier.catalog_package_id.is_some()
-                    && (tier.lifetime_price.is_none() || tier.lifetime_package_id.is_some())
-                {
+        // One set-based tier query per tenant (normally exactly one) instead
+        // of one query per circle: the query is tenant-scoped and official
+        // circles may span tenants, but a tenant's N circles never cost N
+        // queries.
+        for (tenant_id, category_ids) in tier_query_batches_by_tenant(&categories) {
+            let mut tiers_by_category = self
+                .store
+                .list_tiers_for_categories(&tenant_id, &category_ids)
+                .await
+                .map_err(|error| CommunityServiceError::Storage(error.to_string()))?;
+            for category in categories
+                .iter()
+                .filter(|category| category.tenant_id == tenant_id)
+            {
+                let Some(tiers) = tiers_by_category.remove(&category.id) else {
                     continue;
+                };
+                for tier in tiers {
+                    if tier.enabled
+                        && tier.catalog_package_id.is_some()
+                        && (tier.lifetime_price.is_none() || tier.lifetime_package_id.is_some())
+                    {
+                        continue;
+                    }
+                    self.publish_tier(
+                        &category.tenant_id,
+                        OFFICIAL_CIRCLE_OPERATOR_USER_ID,
+                        &category.id,
+                        &tier.id,
+                    )
+                    .await?;
+                    published += 1;
                 }
-                self.publish_tier(
-                    &category.tenant_id,
-                    OFFICIAL_CIRCLE_OPERATOR_USER_ID,
-                    &category.id,
-                    &tier.id,
-                )
-                .await?;
-                published += 1;
             }
         }
         Ok(published)
@@ -1576,24 +1615,31 @@ impl CommunityService {
             enabled: Some(true),
         };
 
+        // Commerce calls are scoped to the tenant that owns the tier; the
+        // in-process adapter uses this to scope the sibling package row.
+        let commerce_scope = CommerceScope::new(category.tenant_id.clone());
+
         // Yearly package (skipped when already registered).
         if tier.catalog_package_id.is_none() {
             let registered = self
                 .commerce
-                .register_membership_package(MembershipPackageRegistration {
-                    category: "community".to_owned(),
-                    code: format!("community-tier-{}", tier.id.replace('-', "")),
-                    package_group_id: "package-group-circle-membership".to_owned(),
-                    plan_id: "plan-circle-membership".to_owned(),
-                    name: format!("{} · {}", category.title, tier.name),
-                    price_amount: format!("{:.2}", tier.price),
-                    currency_code: "CNY".to_owned(),
-                    duration_days: tier.duration_days,
-                    // Full price: the membership backend requires a discount
-                    // percent (1-100) and 100 means no discount.
-                    discount: 100,
-                    status: "active".to_owned(),
-                })
+                .register_membership_package(
+                    MembershipPackageRegistration {
+                        category: "community".to_owned(),
+                        code: format!("community-tier-{}", tier.id.replace('-', "")),
+                        package_group_id: "package-group-circle-membership".to_owned(),
+                        plan_id: "plan-circle-membership".to_owned(),
+                        name: format!("{} · {}", category.title, tier.name),
+                        price_amount: format!("{:.2}", tier.price),
+                        currency_code: "CNY".to_owned(),
+                        duration_days: tier.duration_days,
+                        // Full price: the membership backend requires a discount
+                        // percent (1-100) and 100 means no discount.
+                        discount: 100,
+                        status: "active".to_owned(),
+                    },
+                    commerce_scope.clone(),
+                )
                 .await
                 .map_err(CommunityServiceError::Integration)?;
             patch.catalog_package_id = Some(registered.external_id.to_string());
@@ -1604,18 +1650,21 @@ impl CommunityService {
             if tier.lifetime_package_id.is_none() {
                 let lifetime = self
                     .commerce
-                    .register_membership_package(MembershipPackageRegistration {
-                        category: "community".to_owned(),
-                        code: format!("community-tier-{}-lifetime", tier.id.replace('-', "")),
-                        package_group_id: "package-group-circle-membership".to_owned(),
-                        plan_id: "plan-circle-membership".to_owned(),
-                        name: format!("{} · {}（终身）", category.title, tier.name),
-                        price_amount: format!("{lifetime_price:.2}"),
-                        currency_code: "CNY".to_owned(),
-                        duration_days: LIFETIME_MEMBERSHIP_DURATION_DAYS,
-                        discount: 100,
-                        status: "active".to_owned(),
-                    })
+                    .register_membership_package(
+                        MembershipPackageRegistration {
+                            category: "community".to_owned(),
+                            code: format!("community-tier-{}-lifetime", tier.id.replace('-', "")),
+                            package_group_id: "package-group-circle-membership".to_owned(),
+                            plan_id: "plan-circle-membership".to_owned(),
+                            name: format!("{} · {}（终身）", category.title, tier.name),
+                            price_amount: format!("{lifetime_price:.2}"),
+                            currency_code: "CNY".to_owned(),
+                            duration_days: LIFETIME_MEMBERSHIP_DURATION_DAYS,
+                            discount: 100,
+                            status: "active".to_owned(),
+                        },
+                        commerce_scope,
+                    )
                     .await
                     .map_err(CommunityServiceError::Integration)?;
                 patch.lifetime_package_id = Some(lifetime.external_id.to_string());
@@ -1714,7 +1763,7 @@ impl CommunityService {
         }
         let verification = self
             .commerce
-            .verify_order_paid(&command.order_id)
+            .verify_order_paid(&command.order_id, CommerceScope::new(tenant_id))
             .await
             .map_err(CommunityServiceError::Integration)?;
         if !verification.paid {
@@ -1725,7 +1774,7 @@ impl CommunityService {
         // Accumulate the actual paid amount from the order (the tier price may
         // have changed since the package was registered).
         let paid_amount = verification.paid_amount.unwrap_or(tier.price);
-        let now = Utc::now().to_rfc3339();
+        let now = Utc::now();
         // A purchase through the lifetime package grants the membership
         // forever (membership_expires_at stays NULL); any other package uses
         // the tier duration.
@@ -1734,15 +1783,7 @@ impl CommunityService {
         let expires_at: Option<String> = if is_lifetime {
             None
         } else {
-            Some(
-                chrono::DateTime::parse_from_rfc3339(&now)
-                    .map(|value| value + chrono::Duration::days(tier.duration_days))
-                    .unwrap_or_else(|_| {
-                        chrono::DateTime::parse_from_rfc3339("2030-01-01T00:00:00Z")
-                            .expect("static fallback expiry")
-                    })
-                    .to_rfc3339(),
-            )
+            Some(membership_expires_at(now, tier.duration_days))
         };
 
         // Idempotency: replaying the same paid order must not double-count
@@ -1770,7 +1811,7 @@ impl CommunityService {
                     user_name: display_name.to_owned(),
                     role: "member".to_owned(),
                     bio: None,
-                    now: now.clone(),
+                    now: now.to_rfc3339(),
                 })
                 .await
                 .map_err(|error| CommunityServiceError::Storage(error.to_string()))?;
@@ -1921,6 +1962,29 @@ impl CommunityService {
             status: Some(format!("rebuilt:{rebuilt}")),
         })
     }
+}
+
+/// Groups the official circles into the set-based tier query batches that
+/// [`CommunityService::publish_official_circle_tiers`] issues.
+///
+/// The tier query is tenant-scoped, so circles of different tenants cannot
+/// share one batch, but all of a tenant's circles share exactly one: N
+/// circles cost one query, never N. Order is preserved (first-seen tenant,
+/// then the circle order of `categories`).
+fn tier_query_batches_by_tenant(
+    categories: &[CommunityStoredCategory],
+) -> Vec<(String, Vec<String>)> {
+    let mut batches: Vec<(String, Vec<String>)> = Vec::new();
+    for category in categories {
+        match batches
+            .iter_mut()
+            .find(|(tenant_id, _)| tenant_id == &category.tenant_id)
+        {
+            Some((_, category_ids)) => category_ids.push(category.id.clone()),
+            None => batches.push((category.tenant_id.clone(), vec![category.id.clone()])),
+        }
+    }
+    batches
 }
 
 fn map_category(category: CommunityStoredCategory) -> CommunityCategoryView {
@@ -2116,4 +2180,136 @@ fn recommendation_score(source: &CommunityEntryView, candidate: &CommunityEntryV
             .iter()
             .filter(|tag| source.tags.contains(tag))
             .count() as i64
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn at(rfc3339: &str) -> chrono::DateTime<Utc> {
+        chrono::DateTime::parse_from_rfc3339(rfc3339)
+            .expect("valid test timestamp")
+            .with_timezone(&Utc)
+    }
+
+    #[test]
+    fn a_tier_term_sets_the_membership_expiry() {
+        let now = at("2026-01-01T00:00:00Z");
+        assert_eq!(membership_expires_at(now, 30), "2026-01-31T00:00:00+00:00");
+        let lifetime = chrono::DateTime::parse_from_rfc3339(&membership_expires_at(
+            now,
+            LIFETIME_MEMBERSHIP_DURATION_DAYS,
+        ))
+        .expect("lifetime expiry is RFC3339");
+        assert_eq!(
+            (lifetime.with_timezone(&Utc) - now).num_days(),
+            LIFETIME_MEMBERSHIP_DURATION_DAYS
+        );
+    }
+
+    #[test]
+    fn an_out_of_range_tier_term_expires_instead_of_panicking() {
+        // `activate_membership` used to add the stored term straight to the
+        // clock (`Duration::days(term) + now`), which panics for a term the
+        // calendar cannot represent. A tier's `duration_days` is stored with
+        // no upper bound, so that panic was reachable from an authenticated
+        // purchase (RUST_CODE_SPEC.md section 7).
+        let now = at("2026-01-01T00:00:00Z");
+        assert_eq!(
+            membership_expires_at(now, i64::MAX),
+            membership_expires_at(now, MAX_MEMBERSHIP_DURATION_DAYS)
+        );
+        assert_eq!(membership_expires_at(now, i64::MIN), now.to_rfc3339());
+    }
+
+    fn stored_category(tenant_id: &str, id: &str) -> CommunityStoredCategory {
+        CommunityStoredCategory {
+            id: id.to_owned(),
+            tenant_id: tenant_id.to_owned(),
+            slug: id.to_owned(),
+            title: id.to_owned(),
+            description: None,
+            cover_image: None,
+            avatar: None,
+            owner_id: Some(OFFICIAL_CIRCLE_OPERATOR_USER_ID.to_owned()),
+            member_count: 0,
+            member_limit: None,
+            post_count: 0,
+            is_paid: true,
+            price: Some(99.0),
+            revenue_target: None,
+            revenue_raised: 0.0,
+            tags: Vec::new(),
+            tabs: Vec::new(),
+            priority: 0,
+            enabled: true,
+            is_agent_circle: false,
+            is_recommended: false,
+            is_joined: false,
+        }
+    }
+
+    #[test]
+    fn official_circle_tiers_issue_one_tier_query_for_n_circles() {
+        let categories = vec![
+            stored_category("100001", "circle-a"),
+            stored_category("100001", "circle-b"),
+            stored_category("100001", "circle-c"),
+        ];
+        let batches = tier_query_batches_by_tenant(&categories);
+        assert_eq!(batches.len(), 1, "N circles of one tenant share one query");
+        assert_eq!(
+            batches[0],
+            (
+                "100001".to_owned(),
+                vec![
+                    "circle-a".to_owned(),
+                    "circle-b".to_owned(),
+                    "circle-c".to_owned()
+                ]
+            )
+        );
+    }
+
+    #[test]
+    fn official_circle_tier_batches_stay_tenant_scoped_and_empty_without_circles() {
+        assert!(tier_query_batches_by_tenant(&[]).is_empty());
+        let batches = tier_query_batches_by_tenant(&[
+            stored_category("100001", "circle-a"),
+            stored_category("100002", "circle-b"),
+            stored_category("100001", "circle-c"),
+        ]);
+        assert_eq!(
+            batches,
+            vec![
+                (
+                    "100001".to_owned(),
+                    vec!["circle-a".to_owned(), "circle-c".to_owned()]
+                ),
+                ("100002".to_owned(), vec!["circle-b".to_owned()]),
+            ]
+        );
+    }
+
+    #[test]
+    fn publishing_official_circle_tiers_issues_no_per_category_tier_query() {
+        const SOURCE: &str = include_str!("service.rs");
+        let start = SOURCE
+            .find("pub async fn publish_official_circle_tiers")
+            .expect("publish_official_circle_tiers is defined in service.rs");
+        let end = start
+            + SOURCE[start..]
+                .find("\n    /// Publishes a tier:")
+                .expect("publish_official_circle_tiers is followed by publish_tier");
+        let body = &SOURCE[start..end];
+        assert_eq!(
+            body.matches(".list_tiers_for_categories(").count(),
+            1,
+            "one set-based tier query per publish run"
+        );
+        assert!(
+            !body.contains(".list_tiers("),
+            "publish_official_circle_tiers must not loop over list_tiers"
+        );
+    }
 }

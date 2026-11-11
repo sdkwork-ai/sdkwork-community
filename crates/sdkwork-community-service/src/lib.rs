@@ -4,9 +4,10 @@ mod service;
 
 pub use error::CommunityServiceError;
 pub use integration::{
-    CommerceIntegration, CommerceIntegrationConfig, MembershipPackagePublishFuture,
-    MembershipPackagePublisher, MembershipPackageRegistration, OrderPaymentVerification,
-    OrderPaymentVerifier, OrderPaymentVerifyFuture, RegisteredMembershipPackage,
+    is_paid_order_status, CommerceIntegration, CommerceIntegrationConfig, CommerceScope,
+    CommerceTransportMode, MembershipPackagePublishFuture, MembershipPackagePublisher,
+    MembershipPackageRegistration, OrderPaymentVerification, OrderPaymentVerifier,
+    OrderPaymentVerifyFuture, RegisteredMembershipPackage,
 };
 pub use sdkwork_community_storage_sqlx::CommunityFeedQuery;
 pub use service::{

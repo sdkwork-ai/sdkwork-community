@@ -5,28 +5,30 @@
 //! order repository embedded in the same gateway process, so the community
 //! commerce integration consumes the mounted order capability directly
 //! instead of looping HTTP requests back through the gateway's own listener.
-//! The HTTP adapter (dual-token protected backend surface) remains the
-//! contract for separate-process deployments and every real HTTP client.
+//! This is the default transport; the HTTP adapter is a startup-validated,
+//! explicit split-deployment opt-in only (`MODULE_SPEC.md` section 4.2).
 //!
-//! The service tenant used for management-order lookups is deployment
-//! configuration (environment overrides) with development defaults; it scopes
-//! the embedded repository query the same way the backend operator subject
-//! scopes the HTTP surface.
+//! The call is scoped by the tenant/organization the community service passes
+//! with [`CommerceScope`]. The environment-configured service tenant is only a
+//! fallback for callers that have no scope. A missing order row is reported as
+//! `paid: false`, exactly like the HTTP adapter's `404` mapping.
 
 use sdkwork_community_service::{
-    OrderPaymentVerification, OrderPaymentVerifier, OrderPaymentVerifyFuture,
+    is_paid_order_status, CommerceScope, OrderPaymentVerification, OrderPaymentVerifier,
+    OrderPaymentVerifyFuture,
 };
 use sdkwork_database_sqlx::DatabasePool;
 use sdkwork_order_repository_sqlx::PostgresCommerceOrderStore;
 use sdkwork_order_service::OrderManagementDetailQuery;
 
 /// Overrides the platform service tenant id used for embedded order
-/// management lookups. Defaults to `1`.
+/// management lookups when the caller has no tenant scope. Defaults to `1`.
 pub const SDKWORK_COMMUNITY_ORDER_SERVICE_TENANT_ID_ENV: &str =
     "SDKWORK_COMMUNITY_ORDER_SERVICE_TENANT_ID";
 
 /// Overrides the platform service organization id for embedded order
-/// management lookups (empty or unset means tenant-level scope).
+/// management lookups when the caller has no organization scope (empty, unset,
+/// or `0` means tenant-level scope).
 pub const SDKWORK_COMMUNITY_ORDER_SERVICE_ORGANIZATION_ID_ENV: &str =
     "SDKWORK_COMMUNITY_ORDER_SERVICE_ORGANIZATION_ID";
 
@@ -53,17 +55,31 @@ impl EmbeddedOrderPaymentVerifier {
 }
 
 impl OrderPaymentVerifier for EmbeddedOrderPaymentVerifier {
-    fn verify_order_payment<'a>(&'a self, order_id: &'a str) -> OrderPaymentVerifyFuture<'a> {
+    fn verify_order_payment<'a>(
+        &'a self,
+        order_id: &'a str,
+        scope: CommerceScope,
+    ) -> OrderPaymentVerifyFuture<'a> {
         Box::pin(async move {
+            let tenant_id = scoped_tenant_id(&scope).unwrap_or_else(|| self.tenant_id.clone());
+            let organization_id =
+                scoped_organization_id(&scope).or_else(|| self.organization_id.clone());
+            let query =
+                OrderManagementDetailQuery::new(&tenant_id, organization_id.as_deref(), order_id)
+                    .map_err(|error| {
+                    format!(
+                        "embedded order payment verification query invalid: {}",
+                        error.message()
+                    )
+                })?;
             let detail = self
                 .store
-                .retrieve_management_order(OrderManagementDetailQuery {
-                    tenant_id: self.tenant_id.clone(),
-                    organization_id: self.organization_id.clone(),
-                    order_id: order_id.to_owned(),
-                })
+                .retrieve_management_order(query)
                 .await
                 .map_err(|error| {
+                    // Same service-layer mapping as the split-deployment HTTP
+                    // adapter: an order rejection is an integration failure
+                    // (`CommunityServiceError::Integration`, HTTP 500).
                     format!(
                         "embedded order payment verification failed: {}",
                         error.message()
@@ -77,6 +93,8 @@ impl OrderPaymentVerifier for EmbeddedOrderPaymentVerifier {
                     paid_amount: None,
                 });
             };
+            // The paid-status policy is shared with the HTTP adapter so both
+            // transports cannot drift.
             let status = detail.summary.status.trim().to_ascii_lowercase();
             let payment_status = detail
                 .payment_status
@@ -98,24 +116,25 @@ impl OrderPaymentVerifier for EmbeddedOrderPaymentVerifier {
     }
 }
 
-/// Order statuses that indicate a settled, paid order. Mirrors the HTTP
-/// adapter's status mapping in `sdkwork-community-service` commerce.rs.
-fn is_paid_order_status(status: &str) -> bool {
-    matches!(
-        status,
-        "paid"
-            | "completed"
-            | "settled"
-            | "success"
-            | "finished"
-            | "payment_success"
-            | "payment-success"
-    )
-}
-
 /// Payment-record statuses that independently evidence a settled payment.
 fn is_paid_payment_status(payment_status: &str) -> bool {
     matches!(payment_status, "paid" | "success" | "payment_success")
+}
+
+fn scoped_tenant_id(scope: &CommerceScope) -> Option<String> {
+    scope
+        .tenant_id()
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .map(str::to_owned)
+}
+
+fn scoped_organization_id(scope: &CommerceScope) -> Option<String> {
+    scope
+        .organization_id()
+        .map(str::trim)
+        .filter(|value| !value.is_empty() && *value != "0")
+        .map(str::to_owned)
 }
 
 fn service_tenant_id_from_env() -> String {
@@ -130,12 +149,27 @@ fn service_organization_id_from_env() -> Option<String> {
     std::env::var(SDKWORK_COMMUNITY_ORDER_SERVICE_ORGANIZATION_ID_ENV)
         .ok()
         .map(|value| value.trim().to_owned())
-        .filter(|value| !value.is_empty() && value != "0")
+        .filter(|value| !value.is_empty() && *value != "0")
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn caller_scope_overrides_the_configured_service_tenant() {
+        let scope = CommerceScope::new("100001").with_organization_id("7");
+        assert_eq!(scoped_tenant_id(&scope).as_deref(), Some("100001"));
+        assert_eq!(scoped_organization_id(&scope).as_deref(), Some("7"));
+
+        // Organization `0` means tenant-level scope, same as the fallback.
+        let tenant_level = CommerceScope::new("100001").with_organization_id("0");
+        assert_eq!(scoped_organization_id(&tenant_level), None);
+
+        // A blank scope keeps the configured service fallback.
+        let blank = CommerceScope::new("   ");
+        assert_eq!(scoped_tenant_id(&blank), None);
+    }
 
     #[test]
     fn service_subject_env_parsing() {

@@ -1,5 +1,7 @@
 //! PostgreSQL query implementations for Community authoritative persistence.
 
+use std::collections::HashMap;
+
 use sqlx::{PgPool, Row};
 
 use super::{
@@ -1287,6 +1289,25 @@ pub async fn delete_group(
     Ok(result.rows_affected() > 0)
 }
 
+fn tier_from_row(row: &sqlx::postgres::PgRow) -> CommunityStoredTier {
+    CommunityStoredTier {
+        id: string_cell(row, "id"),
+        tenant_id: string_cell(row, "tenant_id"),
+        category_id: string_cell(row, "category_id"),
+        name: string_cell(row, "name"),
+        description: optional_string_cell(row, "description"),
+        price: optional_f64_cell(row, "price").unwrap_or(0.0),
+        duration_days: integer_cell(row, "duration_days"),
+        lifetime_price: optional_f64_cell(row, "lifetime_price"),
+        lifetime_package_id: optional_string_cell(row, "lifetime_package_id"),
+        benefits: text_array_cell(row, "benefits"),
+        agent_level: optional_string_cell(row, "agent_level"),
+        catalog_package_id: optional_string_cell(row, "catalog_package_id"),
+        sort_order: integer_cell(row, "sort_order"),
+        enabled: bool_cell(row, "enabled"),
+    }
+}
+
 pub async fn list_tiers(
     pool: &PgPool,
     tenant_id: &str,
@@ -1324,25 +1345,58 @@ pub async fn list_tiers(
         .fetch_all(pool)
         .await?
     };
-    Ok(rows
-        .iter()
-        .map(|row| CommunityStoredTier {
-            id: string_cell(row, "id"),
-            tenant_id: string_cell(row, "tenant_id"),
-            category_id: string_cell(row, "category_id"),
-            name: string_cell(row, "name"),
-            description: optional_string_cell(row, "description"),
-            price: optional_f64_cell(row, "price").unwrap_or(0.0),
-            duration_days: integer_cell(row, "duration_days"),
-            lifetime_price: optional_f64_cell(row, "lifetime_price"),
-            lifetime_package_id: optional_string_cell(row, "lifetime_package_id"),
-            benefits: text_array_cell(row, "benefits"),
-            agent_level: optional_string_cell(row, "agent_level"),
-            catalog_package_id: optional_string_cell(row, "catalog_package_id"),
-            sort_order: integer_cell(row, "sort_order"),
-            enabled: bool_cell(row, "enabled"),
-        })
-        .collect())
+    Ok(rows.iter().map(tier_from_row).collect())
+}
+
+/// Lists membership tiers for many circles with one set-based query.
+///
+/// `category_ids` is bound once to `category_id = ANY($2::text[])`, scoped by
+/// `tenant_id = $1` (the community schema's only isolation boundary; circles
+/// and tiers carry no organization dimension). An empty `category_ids` returns
+/// an empty map *without issuing a query*: `ANY('{}')` would still be a
+/// pointless round trip.
+///
+/// Rows are ordered by `category_id ASC, sort_order ASC, created_at ASC`, so
+/// each category bucket keeps exactly the per-category ordering of
+/// [`list_tiers`] (`sort_order` first, then `created_at`); the in-memory
+/// grouping below preserves that row order inside every bucket.
+pub async fn list_tiers_for_categories(
+    pool: &PgPool,
+    tenant_id: &str,
+    category_ids: &[String],
+) -> Result<HashMap<String, Vec<CommunityStoredTier>>, sqlx::Error> {
+    if category_ids.is_empty() {
+        return Ok(HashMap::new());
+    }
+    let rows = sqlx::query(
+        r#"
+        SELECT id, tenant_id, category_id, name, description, price::float8,
+               duration_days, lifetime_price::float8, lifetime_package_id, benefits,
+               agent_level, catalog_package_id, sort_order, enabled
+        FROM community_membership_tier
+        WHERE tenant_id = $1 AND category_id = ANY($2::text[])
+        ORDER BY category_id ASC, sort_order ASC, created_at ASC
+        "#,
+    )
+    .bind(tenant_id)
+    .bind(category_ids.to_vec())
+    .fetch_all(pool)
+    .await?;
+    Ok(group_tiers_by_category(rows.iter().map(tier_from_row)))
+}
+
+/// Buckets already-ordered tiers by `category_id`, preserving their order.
+fn group_tiers_by_category(
+    tiers: impl IntoIterator<Item = CommunityStoredTier>,
+) -> HashMap<String, Vec<CommunityStoredTier>> {
+    let mut grouped: HashMap<String, Vec<CommunityStoredTier>> = HashMap::new();
+    for tier in tiers {
+        grouped
+            .entry(tier.category_id.clone())
+            .or_default()
+            .push(tier);
+    }
+    grouped
 }
 
 pub async fn accumulate_category_revenue(
@@ -1464,4 +1518,68 @@ pub async fn delete_tier(
     .execute(pool)
     .await?;
     Ok(result.rows_affected() > 0)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn stored_tier(category_id: &str, tier_id: &str, sort_order: i64) -> CommunityStoredTier {
+        CommunityStoredTier {
+            id: tier_id.to_owned(),
+            tenant_id: "100001".to_owned(),
+            category_id: category_id.to_owned(),
+            name: tier_id.to_owned(),
+            description: None,
+            price: 1.0,
+            duration_days: 365,
+            lifetime_price: None,
+            lifetime_package_id: None,
+            benefits: Vec::new(),
+            agent_level: None,
+            catalog_package_id: None,
+            sort_order,
+            enabled: false,
+        }
+    }
+
+    #[test]
+    fn grouping_maps_each_category_to_its_own_tiers_in_order() {
+        let grouped = group_tiers_by_category(vec![
+            stored_tier("category-a", "a-first", 1),
+            stored_tier("category-a", "a-second", 2),
+            stored_tier("category-b", "b-first", 1),
+        ]);
+
+        assert_eq!(grouped.len(), 2);
+        assert_eq!(
+            grouped["category-a"]
+                .iter()
+                .map(|tier| tier.id.as_str())
+                .collect::<Vec<_>>(),
+            vec!["a-first", "a-second"],
+        );
+        assert_eq!(
+            grouped["category-b"]
+                .iter()
+                .map(|tier| tier.id.as_str())
+                .collect::<Vec<_>>(),
+            vec!["b-first"],
+        );
+    }
+
+    #[tokio::test]
+    async fn an_empty_category_list_issues_no_tier_query() {
+        // Lazy pool to an unreachable server: the empty-category early return
+        // must never try to connect, so `ANY('{}')` is never sent.
+        let pool = sqlx::postgres::PgPoolOptions::new()
+            .acquire_timeout(std::time::Duration::from_millis(250))
+            .connect_lazy("postgres://community:community@127.0.0.1:1/community")
+            .expect("build lazy pool");
+        let tiers = list_tiers_for_categories(&pool, "100001", &[])
+            .await
+            .expect("empty category list must not query");
+        assert!(tiers.is_empty());
+        pool.close().await;
+    }
 }

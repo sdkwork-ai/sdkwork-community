@@ -2,9 +2,11 @@
 //! registration and order payment verification).
 
 pub mod commerce;
+mod commerce_http;
 
 pub use commerce::{
-    CommerceIntegration, CommerceIntegrationConfig, MembershipPackagePublishFuture,
-    MembershipPackagePublisher, MembershipPackageRegistration, OrderPaymentVerification,
-    OrderPaymentVerifier, OrderPaymentVerifyFuture, RegisteredMembershipPackage,
+    is_paid_order_status, CommerceIntegration, CommerceIntegrationConfig, CommerceScope,
+    CommerceTransportMode, MembershipPackagePublishFuture, MembershipPackagePublisher,
+    MembershipPackageRegistration, OrderPaymentVerification, OrderPaymentVerifier,
+    OrderPaymentVerifyFuture, RegisteredMembershipPackage,
 };

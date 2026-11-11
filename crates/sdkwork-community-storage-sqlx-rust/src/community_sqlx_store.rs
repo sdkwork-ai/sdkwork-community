@@ -419,6 +419,25 @@ impl CommunitySqlxStore {
         .await
     }
 
+    /// Lists membership tiers for many circles with one set-based query,
+    /// bucketed by category id in memory (each bucket keeps the `sort_order`,
+    /// `created_at` ordering of [`Self::list_tiers`]).
+    ///
+    /// An empty `category_ids` issues no query at all.
+    pub async fn list_tiers_for_categories(
+        &self,
+        tenant_id: &str,
+        category_ids: &[String],
+    ) -> Result<std::collections::HashMap<String, Vec<super::CommunityStoredTier>>, sqlx::Error>
+    {
+        super::postgres_queries::list_tiers_for_categories(
+            self.postgres_pool(),
+            tenant_id,
+            category_ids,
+        )
+        .await
+    }
+
     /// Atomically adds the paid amount to the circle's raised revenue
     /// (concurrent activations must not lose increments).
     pub async fn accumulate_category_revenue(
