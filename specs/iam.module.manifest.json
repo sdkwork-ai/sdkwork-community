@@ -415,7 +415,25 @@
   },
   "roles": {
     "domainStandardRoles": [],
-    "roleGrantExtensions": [],
+    "roleGrantExtensions": [
+      {
+        "roleCode": "app_user",
+        "patterns": [
+          "community.comments.write",
+          "community.entries.write",
+          "community.groups.write",
+          "community.members.write",
+          "community.memberships.write",
+          "community.reactions.write"
+        ]
+      },
+      {
+        "roleCode": "org_admin",
+        "patterns": [
+          "community.*"
+        ]
+      }
+    ],
     "roleExclusions": [],
     "assignability": [],
     "bootstrapDefaults": []
