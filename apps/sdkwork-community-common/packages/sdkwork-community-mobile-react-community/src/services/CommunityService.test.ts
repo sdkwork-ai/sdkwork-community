@@ -332,6 +332,7 @@ describe("CommunityService", () => {
         url: "drive://spaces/s1/nodes/n2",
         uploadedBy: "资料君",
         createdAt: "2026-05-25T10:00:00Z",
+        reviewState: "approved",
       },
     ]);
     await expect(CommunityService.getResourcesByCommunity(PRODUCT_MANAGERS_ID)).resolves.toEqual([]);
