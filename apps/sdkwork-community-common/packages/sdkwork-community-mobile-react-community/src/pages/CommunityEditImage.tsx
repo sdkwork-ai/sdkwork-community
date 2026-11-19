@@ -28,7 +28,7 @@ async function getCroppedImg(
   const canvas = document.createElement('canvas')
   const ctx = canvas.getContext('2d')
 
-  if (!ctx) return ''
+  if (!ctx) throw new Error('Canvas is unavailable')
 
   canvas.width = image.width
   canvas.height = image.height
@@ -37,7 +37,7 @@ async function getCroppedImg(
 
   const croppedCanvas = document.createElement('canvas')
   const croppedCtx = croppedCanvas.getContext('2d')
-  if (!croppedCtx) return ''
+  if (!croppedCtx) throw new Error('Canvas is unavailable')
   
   croppedCanvas.width = pixelCrop.width
   croppedCanvas.height = pixelCrop.height

@@ -56,7 +56,7 @@ const navigate = useNavigate();
         name,
         description,
         tags: tags.split(" ").filter(t => t.trim()),
-        coverImage: storedCoverImage,
+        coverImage: storedCoverImage ?? '',
         isPaid,
         memberLimit: memberLimit.trim() ? Number(memberLimit) : undefined,
         revenueTarget: revenueTarget.trim() ? Number(revenueTarget) : undefined,
