@@ -9,10 +9,10 @@
   "generationInputSpec": "../../generated/openapi/community-app-api.openapi.json",
   "sdkDependencies": [],
   "generatedPackages": {
-    "typescript": {
-      "language": "typescript",
-      "packageName": "sdkwork-community-app-sdk-generated-typescript",
-      "generatedOutput": "sdkwork-community-app-sdk-typescript/generated/server-openapi"
+    "flutter": {
+      "language": "flutter",
+      "packageName": "sdkwork-community-app-sdk-generated-flutter",
+      "generatedOutput": "sdkwork-community-app-sdk-flutter/generated/server-openapi"
     }
   },
   "generatorName": "@sdkwork/sdk-generator",
