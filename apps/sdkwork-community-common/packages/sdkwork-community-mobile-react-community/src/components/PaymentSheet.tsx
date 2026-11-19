@@ -48,7 +48,7 @@ export const PaymentSheet: React.FC<PaymentSheetProps> = ({
   // Callers open the sheet before tiers resolve, so preselect the first tier
   // once the list arrives. Also recover a stale selection (e.g. the tier list
   // was refreshed and the previously chosen tier no longer exists) instead of
-  // leaving the sheet with a dead "请选择会员等级" state.
+  // leaving the sheet in a dead "select a tier" state.
   useEffect(() => {
     if (tiers.length === 0) {
       if (selectedTierId !== null) {
@@ -63,25 +63,15 @@ export const PaymentSheet: React.FC<PaymentSheetProps> = ({
   }, [tiers, selectedTierId]);
 
   useEffect(() => {
-    // 检测是否登录（auth session port 由宿主注入）
     const user = getCommunityCurrentUser();
     if (!user) {
-      // 未登录，检测是否在微信内（可支持授权/静默登录Mock）
-      const ua = navigator.userAgent.toLowerCase();
-      const isWx = ua.includes('micromessenger');
-
       const currentPath = encodeURIComponent(location.pathname + location.search);
-      if (isWx) {
-        // Mock 微信授权登录流程
-        console.log("检测到微信环境，发起微信授权或静默登录...");
-        // 实际开发中会重定向到微信授权URL
-      }
       navigate(`/login?redirect=${currentPath}`);
     }
   }, [navigate, location]);
 
   useEffect(() => {
-    // 环境检测：微信/支付宝/网页
+    // Pick the default method the embedded browser can actually settle.
     const ua = navigator.userAgent.toLowerCase();
     const isWx = ua.includes('micromessenger');
     const isAli = ua.includes('alipayclient');
