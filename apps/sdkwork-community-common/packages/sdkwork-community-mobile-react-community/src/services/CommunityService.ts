@@ -13,7 +13,10 @@ import {
   getCommunityRuntimePort,
   isCommunityFeedsPortConfigured,
 } from "./communityRuntimePort";
-import { getCommunityMediaRuntime } from "./communityMediaRuntimePort";
+import {
+  getCommunityMediaRuntime,
+  isCommunityMediaRuntimeConfigured,
+} from "./communityMediaRuntimePort";
 import type { Community, CommunityGroup, CommunityMember, MembershipTier, Post, PostComment, Resource } from "../types";
 
 /**
@@ -29,6 +32,49 @@ import type { Community, CommunityGroup, CommunityMember, MembershipTier, Post, 
 // Session-local liked post ids (reactions are per-viewer; the backend keeps
 // the authoritative reaction count, the set only tracks the viewer's state).
 const LIKED_POST_IDS = new Set<string>();
+
+// Entries the current user just created are inserted as drafts and are not in
+// the approved public feed until moderation approves them. Keep the author's
+// own pending entries visible in their session (with a pending badge); the
+// server remains the authority and the id de-duplicates once approved.
+const PENDING_POSTS = new Map<string, Post[]>();
+const PENDING_RESOURCES = new Map<string, Resource[]>();
+
+function rememberPendingPost(communityId: string, post: Post): void {
+  if (post.reviewState === "approved") {
+    return;
+  }
+  const current = PENDING_POSTS.get(communityId) ?? [];
+  PENDING_POSTS.set(communityId, [post, ...current.filter((item) => item.id !== post.id)]);
+}
+
+function rememberPendingResource(communityId: string, resource: Resource): void {
+  if (resource.reviewState === "approved") {
+    return;
+  }
+  const current = PENDING_RESOURCES.get(communityId) ?? [];
+  PENDING_RESOURCES.set(communityId, [resource, ...current.filter((item) => item.id !== resource.id)]);
+}
+
+function mergePendingPosts(communityId: string, posts: Post[], tag?: string): Post[] {
+  const pending = (PENDING_POSTS.get(communityId) ?? []).filter(
+    (post) => !tag || post.tags?.includes(tag),
+  );
+  if (pending.length === 0) {
+    return posts;
+  }
+  const ids = new Set(posts.map((post) => post.id));
+  return [...pending.filter((post) => !ids.has(post.id)), ...posts];
+}
+
+function mergePendingResources(communityId: string, resources: Resource[]): Resource[] {
+  const pending = PENDING_RESOURCES.get(communityId) ?? [];
+  if (pending.length === 0) {
+    return resources;
+  }
+  const ids = new Set(resources.map((resource) => resource.id));
+  return [...pending.filter((resource) => !ids.has(resource.id)), ...resources];
+}
 
 function port(): SdkworkCommunityAppSdkPort {
   return getCommunityRuntimePort();
@@ -54,33 +100,139 @@ function toReadableFeedText(item: FeedItem): string {
 }
 
 function mapFeedItemToPost(item: FeedItem): Post {
+  const payload = item.payload as Record<string, unknown> | undefined;
+  const media = Array.isArray(payload?.media)
+    ? payload.media.filter((entry): entry is string => typeof entry === "string")
+    : Array.isArray(payload?.images)
+      ? payload.images.filter((entry): entry is string => typeof entry === "string")
+      : undefined;
+  const body = typeof payload?.body === "string" ? payload.body : undefined;
   return {
     id: item.id,
     communityId: item.streamKey?.replace(/^community-/, "").replace(/-resources$/, "") ?? "",
     authorId: item.author?.id ?? "",
     authorName: item.author?.name ?? "",
     authorAvatar: item.author?.avatarUrl ?? "",
-    content: toReadableFeedText(item),
-    images: undefined,
+    content: body?.trim() || toReadableFeedText(item),
+    images: media && media.length > 0 ? media : undefined,
     createdAt: String(item.publishedAt ?? item.createdAt ?? ""),
     likes: item.reactionCount ?? 0,
     comments: item.commentCount ?? 0,
     isLiked: LIKED_POST_IDS.has(item.id),
+    reviewState: "approved",
   };
 }
 
 function mapFeedItemToResource(item: FeedItem): Resource {
   const payload = item.payload as Record<string, unknown> | undefined;
   const firstTag = typeof payload?.tag === "string" ? payload.tag : "";
+  const payloadUrl =
+    typeof payload?.url === "string"
+      ? payload.url
+      : Array.isArray(payload?.media)
+        ? payload.media.find((entry): entry is string => typeof entry === "string")
+        : undefined;
   return {
     id: item.id,
     communityId: item.streamKey?.replace(/^community-/, "").replace(/-resources$/, "") ?? "",
     title: item.title,
     type: firstTag || "link",
-    url: item.coverUrl ?? "#",
+    url: payloadUrl ?? item.coverUrl ?? "#",
     createdAt: String(item.publishedAt ?? item.createdAt ?? ""),
     uploadedBy: item.author?.name ?? "",
+    reviewState: "approved",
   };
+}
+
+/**
+ * Resolves one stored media URI through the host media port.
+ *
+ * Drive references are not browser-loadable; hosts with a media runtime
+ * resolve them to a short-lived URL. Non-drive values and hosts without a
+ * resolver keep the stored value.
+ */
+async function resolveMediaUri(uri: string | undefined): Promise<string> {
+  if (!uri || !uri.startsWith("drive://") || !isCommunityMediaRuntimeConfigured()) {
+    return uri ?? "";
+  }
+  const resolve = getCommunityMediaRuntime().resolveDisplayUrl;
+  if (!resolve) {
+    return uri;
+  }
+  return (await resolve(uri)) ?? uri;
+}
+
+/** Resolves circle avatar/cover media for display. */
+async function resolveCommunityMedia(community: Community): Promise<Community> {  const [avatar, coverImage] = await Promise.all([
+    resolveMediaUri(community.avatar),
+    resolveMediaUri(community.coverImage),
+  ]);
+  return {
+    ...community,
+    avatar: avatar || undefined,
+    coverImage,
+    ...(community.avatar?.startsWith("drive://") ? { rawAvatar: community.avatar } : {}),
+    ...(community.coverImage?.startsWith("drive://") ? { rawCoverImage: community.coverImage } : {}),
+  };
+}
+
+/** Loads a post's comments without failing the whole feed on one error. */
+async function loadComments(entryId: string): Promise<PostComment[]> {
+  try {
+    const comments = await port().community.comments.list(entryId);
+    return comments.map(mapCommentToPostComment);
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Resolves stored drive:// media into transient display URLs.
+ *
+ * Post media is persisted as a Drive reference, never as a delivery URL. A
+ * browser cannot load `drive://...` directly, so the host media port resolves
+ * each reference before the post renders. Hosts without a media port keep the
+ * stored value (their composer never produced drive media either).
+ */
+async function resolvePostImages(post: Post): Promise<Post> {
+  if (!post.images?.length || !isCommunityMediaRuntimeConfigured()) {
+    return post;
+  }
+  const resolve = getCommunityMediaRuntime().resolveDisplayUrl;
+  if (!resolve) {
+    return post;
+  }
+  const images = await Promise.all(
+    post.images.map(async (uri) => (uri.startsWith("drive://") ? (await resolve(uri)) ?? uri : uri)),
+  );
+  return { ...post, images };
+}
+
+/** Lightweight fallback path for hosts whose app-api feed is unavailable. */
+async function loadPostsFromFeeds(
+  communityId: string,
+  tag: string | undefined,
+): Promise<Post[]> {
+  if (!isCommunityFeedsPortConfigured()) {
+    return [];
+  }
+  // The feeds stream has no tag parameter; a tagged tab is an app-api read.
+  if (tag) {
+    return [];
+  }
+  const items = await listCircleFeedItems(
+    getCommunityFeedsPort(),
+    circlePostsStreamKey(communityId),
+  );
+  const posts = items
+    .filter((item) => payloadKind(item) !== "resource")
+    .map(mapFeedItemToPost);
+  return Promise.all(
+    posts.map(async (post) => {
+      const withComments = { ...post, commentsList: await loadComments(post.id) };
+      return resolvePostImages(withComments);
+    }),
+  );
 }
 
 /** Reads one circle feed page through the standard feeds stream client. */
@@ -190,6 +342,8 @@ function mapEntryToPost(entry: SdkworkCommunityEntry, commentsList?: PostComment
     comments: commentsList?.length ?? entry.stats.commentCount ?? 0,
     commentsList,
     isLiked: LIKED_POST_IDS.has(entry.id),
+    reviewState: entry.reviewState,
+    tags: entry.tags ? [...entry.tags] : undefined,
   };
 }
 
@@ -204,6 +358,7 @@ function mapEntryToResource(entry: SdkworkCommunityEntry): Resource {
     url: entry.media?.[0] ?? "#",
     uploadedBy: entry.author.name,
     createdAt: String(entry.publishedAt ?? entry.lastActivityAt ?? ""),
+    reviewState: entry.reviewState,
   };
 }
 
@@ -314,22 +469,24 @@ export const CommunityService = {
       tags: community.tags,
       tabs: community.tabs,
     });
-    return mapCategoryToCommunity(category, true);
+    return resolveCommunityMedia(mapCategoryToCommunity(category, true));
   },
 
   async getCommunities(): Promise<Community[]> {
     const categories = await port().community.categories.list();
     // The list endpoint already carries the current user's membership state;
     // no per-circle members.current requests (N+1).
-    return categories.map((category) =>
-      mapCategoryToCommunity(category, Boolean(category.isJoined)),
+    return Promise.all(
+      categories.map(async (category) =>
+        resolveCommunityMedia(mapCategoryToCommunity(category, Boolean(category.isJoined))),
+      ),
     );
   },
 
   async getCommunityById(id: string): Promise<Community | undefined> {
     try {
       const category = await port().community.categories.retrieve(id);
-      return mapCategoryToCommunity(category, Boolean(category.isJoined));
+      return resolveCommunityMedia(mapCategoryToCommunity(category, Boolean(category.isJoined)));
     } catch {
       // The backend returns not-found for missing or disabled circles.
       return undefined;
@@ -354,55 +511,107 @@ export const CommunityService = {
     await port().community.categories.remove(communityId);
   },
 
-  async getPostsByCommunity(communityId: string): Promise<Post[]> {
-    // 动态 tab shows non-resource entries; resources have their own tab.
-    // The standard feeds stream carries the source kind in the standardized
-    // payload, so the exclusion filter stays client-side and explicit.
-    if (isCommunityFeedsPortConfigured()) {
-      const items = await listCircleFeedItems(
-        getCommunityFeedsPort(),
-        circlePostsStreamKey(communityId),
+  /**
+   * Lists circle posts.
+   *
+   * The app-api feed is authoritative and returns the complete entry (body,
+   * media, tags, stats). The standard feeds stream is a lightweight projection
+   * that intentionally drops the body and media, so it is only a fallback for
+   * hosts where the app-api feed is unavailable. Never render the lightweight
+   * projection while a complete read is available: posts would silently lose
+   * their images and their body beyond the excerpt.
+   */
+  async getPostsByCommunity(
+    communityId: string,
+    options: { tag?: string } = {},
+  ): Promise<Post[]> {
+    const tag = options.tag?.trim();
+    try {
+      const entries = await port().community.feed.list({
+        categoryId: communityId,
+        ...(tag ? { tag } : {}),
+      });
+      // The default 动态 tab shows non-resource entries; resources have their
+      // own tab. A tagged tab (news/docs/repos/software) shows every entry
+      // carrying that tag, including resource entries.
+      const visible = tag ? entries : entries.filter((entry) => entry.kind !== "resource");
+      const posts = await Promise.all(
+        visible.map(async (entry) =>
+          resolvePostImages(mapEntryToPost(entry, await loadComments(entry.id))),
+        ),
       );
-      const posts = items
-        .filter((item) => payloadKind(item) !== "resource")
-        .map(mapFeedItemToPost);
-      return Promise.all(
-        posts.map(async (post) => {
-          const comments = await port().community.comments.list(post.id);
-          return { ...post, commentsList: comments.map(mapCommentToPostComment) };
-        }),
-      );
+      return mergePendingPosts(communityId, posts, tag);
+    } catch {
+      return mergePendingPosts(communityId, await loadPostsFromFeeds(communityId, tag), tag);
     }
-    // Migration fallback: legacy community feed surface. The generated feed
-    // SDK contract exposes a single `kind` filter, so the resource exclusion
-    // stays client-side and explicit (same as the feeds stream path above).
-    const entries = await port().community.feed.list({ categoryId: communityId });
-    const posts = entries.filter((entry) => entry.kind !== "resource");
-    return Promise.all(
-      posts.map(async (entry) => {
-        const comments = await port().community.comments.list(entry.id);
-        return mapEntryToPost(entry, comments.map(mapCommentToPostComment));
-      }),
-    );
+  },
+
+  /** Lists entries carrying one circle tab tag (news/docs/repos/software). */
+  async getPostsByCommunityTag(communityId: string, tag: string): Promise<Post[]> {
+    return this.getPostsByCommunity(communityId, { tag });
   },
 
   /**
    * Creates a post. Images are uploaded through the host-injected media
    * runtime (drive-backed) and stored on the backend entry as media URLs;
-   * the backend mints the post id.
+   * the backend mints the post id. Circle tab entries pass their tab tag so
+   * the news/docs/repos/software tabs can render them.
    */
-  async createPost(communityId: string, content: string, images?: File[]): Promise<Post> {
+  async createPost(
+    communityId: string,
+    content: string,
+    images?: File[],
+    options: {
+      kind?: SdkworkCommunityEntry["kind"];
+      tags?: readonly string[];
+      title?: string;
+    } = {},
+  ): Promise<Post> {
     const media =
       images && images.length > 0 ? await getCommunityMediaRuntime().uploadImages(images) : [];
+    const kind = options.kind ?? "discussion";
+    const tags = (options.tags ?? []).map((tag) => tag.trim()).filter(Boolean);
     const entry = await port().community.entries.create({
       categoryId: communityId,
-      kind: "discussion",
-      title: truncate(content.split("\n")[0] ?? "", 120) || "Untitled",
+      kind,
+      title: options.title?.trim() || truncate(content.split("\n")[0] ?? "", 120) || "Untitled",
       excerpt: truncate(content, 240),
       body: content,
       media,
+      ...(tags.length > 0 ? { tags } : {}),
     });
-    return mapEntryToPost(entry);
+    const post = await resolvePostImages(mapEntryToPost(entry));
+    rememberPendingPost(communityId, post);
+    return post;
+  },
+
+  /**
+   * Publishes a resource into a circle. The entry keeps the resource type in
+   * its first tag and the addressable URL in its media list, which is the
+   * shape the resources tab reads.
+   */
+  async createResource(
+    communityId: string,
+    resource: {
+      title: string;
+      url: string;
+      type?: string;
+      description?: string;
+    },
+  ): Promise<Resource> {
+    const type = resource.type?.trim() || "link";
+    const entry = await port().community.entries.create({
+      categoryId: communityId,
+      kind: "resource",
+      title: resource.title.trim(),
+      excerpt: resource.description?.trim() || resource.title.trim(),
+      body: resource.description?.trim() || resource.title.trim(),
+      media: [resource.url.trim()],
+      tags: [type, "resource"],
+    });
+    const mapped = mapEntryToResource(entry);
+    rememberPendingResource(communityId, mapped);
+    return mapped;
   },
 
   /** Creates a comment and returns the backend-minted comment (id included). */
@@ -421,22 +630,33 @@ export const CommunityService = {
     }
   },
 
+  /** Deletes a post; the backend requires the author or a circle moderator. */
+  async deletePost(communityId: string, postId: string): Promise<void> {
+    await port().community.entries.delete(postId);
+    const pending = PENDING_POSTS.get(communityId);
+    if (pending) {
+      PENDING_POSTS.set(communityId, pending.filter((post) => post.id !== postId));
+    }
+  },
+
   /** Resources are backend entries of kind "resource" within the circle. */
   async getResourcesByCommunity(communityId: string): Promise<Resource[]> {
-    if (isCommunityFeedsPortConfigured()) {
+    try {
+      const entries = await port().community.feed.list({
+        categoryId: communityId,
+        kind: "resource",
+      });
+      return mergePendingResources(communityId, entries.map(mapEntryToResource));
+    } catch {
+      if (!isCommunityFeedsPortConfigured()) {
+        return [];
+      }
       const items = await listCircleFeedItems(
         getCommunityFeedsPort(),
         circleResourcesStreamKey(communityId),
       );
-      return items.map(mapFeedItemToResource);
+      return mergePendingResources(communityId, items.map(mapFeedItemToResource));
     }
-    // Migration fallback: legacy community feed surface (single `kind` filter
-    // per the generated feed SDK contract).
-    const entries = await port().community.feed.list({
-      categoryId: communityId,
-      kind: "resource",
-    });
-    return entries.map(mapEntryToResource);
   },
 
   async getGroupsByCommunity(communityId: string): Promise<CommunityGroup[]> {
@@ -515,6 +735,7 @@ export const CommunityService = {
       description: tier.description,
       price: tier.price,
       durationDays: tier.durationDays,
+      lifetimePrice: tier.lifetimePrice,
       benefits: tier.benefits,
       sortOrder: tier.sortOrder,
     });
@@ -532,6 +753,7 @@ export const CommunityService = {
       description: tier.description,
       price: tier.price,
       durationDays: tier.durationDays,
+      lifetimePrice: tier.lifetimePrice,
       benefits: tier.benefits,
       sortOrder: tier.sortOrder,
     });

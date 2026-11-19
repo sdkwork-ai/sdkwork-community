@@ -2,16 +2,18 @@ import { useTranslation } from "react-i18next";
 import React from "react";
 import { Post } from "../types";
 import { cn } from "@sdkwork/ui-mobile-react";
-import { Heart, MessageCircle } from "lucide-react";
+import { Heart, MessageCircle, Trash2 } from "lucide-react";
 import { CommunityImage } from "./CommunityImage";
 
 interface PostListProps {
   posts: Post[];
   onLike: (postId: string) => void;
   onCommentClick: (postId: string) => void;
+  currentUserId?: string;
+  onDelete?: (postId: string) => void;
 }
 
-export const PostList: React.FC<PostListProps> = ({ posts, onLike, onCommentClick }) => {
+export const PostList: React.FC<PostListProps> = ({ posts, onLike, onCommentClick, currentUserId, onDelete }) => {
   const { t } = useTranslation();
 return (
     <div className="pb-24 flex flex-col gap-2 bg-chat-btn-bg dark:bg-black/50">
@@ -22,9 +24,24 @@ return (
               <CommunityImage src={post.authorAvatar} alt="" fallbackSeed={post.authorName} className="w-10 h-10 rounded-full border border-black/5 dark:border-white/5" />
               <div className="flex flex-col">
                 <span className="text-[15px] font-bold text-text-main">{post.authorName}</span>
+                {post.reviewState && post.reviewState !== "approved" ? (
+                  <span className="mt-0.5 w-fit rounded-full bg-amber-500/10 px-2 py-0.5 text-[11px] font-medium text-amber-600">
+                    {t('community.auto_pending_review', '审核中')}
+                  </span>
+                ) : null}
                 <span className="text-[12px] text-text-sub">{new Date(post.createdAt).toLocaleString()}</span>
               </div>
             </div>
+            {onDelete && currentUserId && post.authorId === currentUserId ? (
+              <button
+                type="button"
+                aria-label={t('community.auto_delete_post', '删除动态')}
+                className="p-1.5 text-text-sub active:opacity-60"
+                onClick={() => onDelete(post.id)}
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+            ) : null}
           </div>
           <p className="text-[15px] text-text-main leading-relaxed mb-3 whitespace-pre-wrap">{post.content}</p>
           {post.images && post.images.length > 0 && (

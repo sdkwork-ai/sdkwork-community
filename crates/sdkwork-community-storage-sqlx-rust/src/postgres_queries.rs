@@ -310,7 +310,7 @@ pub async fn create_entry(pool: &PgPool, input: NewCommunityEntry) -> Result<(),
              review_state, is_featured, is_pinned, has_accepted_answer, comment_count,
              reaction_count, share_count, view_count, media, published_at, last_activity_at, created_at, updated_at)
         VALUES
-            ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'draft', FALSE, FALSE, FALSE, 0, 0, 0, 0,
+            ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'pending-review', FALSE, FALSE, FALSE, 0, 0, 0, 0,
              $10::jsonb, NULL, $11, $12, $13)
         "#,
     )

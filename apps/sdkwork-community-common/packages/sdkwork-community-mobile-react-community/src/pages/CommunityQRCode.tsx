@@ -50,9 +50,25 @@ const { id } = useParams<{ id: string }>();
     }
   };
 
-  const handleShare = (type: string) => {
-  showToast(t('community.auto_shared_to', '已分享到{{target}}', { target: type }));
-    setIsActionSheetOpen(false);
+  const handleShare = async (type: string) => {
+    if (!community) return;
+    const url = `${window.location.origin}/community/${community.id}`;
+    try {
+      if (typeof navigator.share === "function") {
+        await navigator.share({
+          title: community.name,
+          text: t('community.auto_share_text', '加入圈子：{{name}}', { name: community.name }),
+          url,
+        });
+      } else {
+        await navigator.clipboard.writeText(url);
+        showToast(t('community.auto_link_copied', '链接已复制'));
+      }
+    } catch {
+      // The platform share sheet can be dismissed by the user; nothing to do.
+    } finally {
+      setIsActionSheetOpen(false);
+    }
   };
 
   if (isLoading || !community) {

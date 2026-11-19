@@ -218,6 +218,19 @@ const { id } = useParams<{ id: string }>();
             </div>
           )}
 
+          <div className="bg-white dark:bg-[#1C1C1E] mt-4 border-y border-black/5 dark:border-white/5 px-4 py-4">
+            <button
+              type="button"
+              className="w-full py-3 text-[16px] font-medium text-red-500 active:opacity-60"
+              onClick={() => {
+                if (!window.confirm(t('community.auto_delete_circle_confirm', '确定解散该圈子吗？此操作不可恢复。'))) return;
+                void CommunityService.deleteCommunity(community.id).then(() => navigate('/community'));
+              }}
+            >
+              {t('community.auto_delete_circle', '解散圈子')}
+            </button>
+          </div>
+
        </div>
     </div>
   );

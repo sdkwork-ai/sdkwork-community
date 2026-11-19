@@ -26,6 +26,17 @@ export const CommunityMembers: React.FC = () => {
     loadMembers();
   }, [id]);
 
+  const handleInvite = async () => {
+    if (!id || typeof window === "undefined") return;
+    const link = `${window.location.origin}/community/${id}`;
+    try {
+      await navigator.clipboard.writeText(link);
+      showToast(t('community.auto_fn_64f8a6d9', '已复制邀请链接'));
+    } catch {
+      window.prompt(t('community.auto_invite_link', '邀请链接'), link);
+    }
+  };
+
   const loadMembers = async () => {
     if (!id) return;
     setIsLoading(true);
@@ -107,7 +118,7 @@ export const CommunityMembers: React.FC = () => {
           <div className="absolute right-4 z-10 flex items-center h-full">
             <span 
               className="text-blue-500 text-[15px] cursor-pointer font-medium active:opacity-70 flex items-center h-full px-2 -mr-2"
-              onClick={() => showToast(t('community.auto_fn_64f8a6d9', '已复制邀请链接'))}
+              onClick={() => void handleInvite()}
             >{t('community.auto_43c93dff', '邀请成员')}</span>
           </div>
        </header>

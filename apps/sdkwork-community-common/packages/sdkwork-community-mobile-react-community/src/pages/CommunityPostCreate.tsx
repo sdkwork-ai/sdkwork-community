@@ -1,10 +1,10 @@
 import { useTranslation } from "react-i18next";
 import React, { useState, useRef, useEffect } from "react";
-import { useParams, useNavigate } from "react-router";
+import { useParams, useNavigate, useSearchParams } from "react-router";
 import { CommunityService } from "../services/CommunityService";
 import { isCommunityMediaRuntimeConfigured } from "../services/communityMediaRuntimePort";
 import { showToast, cn } from "@sdkwork/ui-mobile-react";
-import { X, Plus, MapPin, Hash, AtSign } from "lucide-react";
+import { X, Plus } from "lucide-react";
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
@@ -13,7 +13,14 @@ export const CommunityPostCreate: React.FC = () => {
   const { t } = useTranslation();
 const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const tab = (searchParams.get("tab") ?? "feeds").trim();
+  const isResource = tab === "resources";
+  const isCustomTab = ["news", "docs", "repos", "software"].includes(tab);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [title, setTitle] = useState("");
+  const [resourceUrl, setResourceUrl] = useState("");
+  const [resourceType, setResourceType] = useState("link");
   // Upload-ready File objects; data-URL previews are derived for display.
   const [images, setImages] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
@@ -98,14 +105,43 @@ const { id } = useParams<{ id: string }>();
   const handleSubmit = async () => {
     if (!id) return;
     const content = editor?.getText() || "";
+    if (isResource) {
+      if (!title.trim() || !resourceUrl.trim()) {
+        showToast(t('community.auto_resource_required', '请填写资源标题和地址'));
+        return;
+      }
+      setIsSubmitting(true);
+      try {
+        const created = await CommunityService.createResource(id, {
+          title,
+          url: resourceUrl,
+          type: resourceType,
+          description: content,
+        });
+        showToast(created.reviewState === "approved"
+          ? t('community.auto_fn_28260f86', '发表成功')
+          : t('community.auto_pending_submitted', '已提交审核，审核通过后展示'));
+        navigate(-1);
+      } catch {
+        showToast(t('community.auto_fn_b5c6cde', '发表失败，请重试'));
+      } finally {
+        setIsSubmitting(false);
+      }
+      return;
+    }
     if (!content.trim() && images.length === 0) {
       showToast(t('community.auto_fn_n707125e8', '请输入内容或上传图片'));
       return;
     }
     setIsSubmitting(true);
     try {
-      await CommunityService.createPost(id, content, images);
-      showToast(t('community.auto_fn_28260f86', '发表成功'));
+      const created = await CommunityService.createPost(id, content, images, {
+        ...(title.trim() ? { title } : {}),
+        ...(isCustomTab ? { tags: [tab] } : {}),
+      });
+      showToast(created.reviewState === "approved"
+        ? t('community.auto_fn_28260f86', '发表成功')
+        : t('community.auto_pending_submitted', '已提交审核，审核通过后展示'));
       // We just go back. For actual replace we would need the previous path, 
       // but going back is usually sufficient for create pages.
       navigate(-1);
@@ -117,7 +153,9 @@ const { id } = useParams<{ id: string }>();
   };
 
   const isEmpty = editor?.isEmpty;
-  const isPublishDisabled = isSubmitting || (isEmpty && images.length === 0);
+  const isPublishDisabled = isSubmitting || (isResource
+    ? !title.trim() || !resourceUrl.trim()
+    : isEmpty && images.length === 0);
 
   return (
     <div className="flex flex-col h-full bg-white dark:bg-[#111111] overflow-hidden relative selection:bg-blue-500/30">
@@ -158,10 +196,47 @@ const { id } = useParams<{ id: string }>();
       </header>
 
       <div className="flex-1 overflow-y-auto w-full flex flex-col mb-safe">
+         {(isResource || isCustomTab) && (
+           <div className="px-4 pt-3 flex flex-col gap-2">
+             <input
+               value={title}
+               onChange={(event) => setTitle(event.target.value)}
+               placeholder={t('community.auto_entry_title', '标题')}
+               className="w-full bg-[#F2F2F7] dark:bg-[#2C2C2E] px-4 py-3 rounded-xl outline-none text-[15px] text-text-main"
+             />
+             {isResource && (
+               <>
+                 <input
+                   value={resourceUrl}
+                   onChange={(event) => setResourceUrl(event.target.value)}
+                   placeholder={t('community.auto_resource_url', '资源地址（链接或文件 URL）')}
+                   className="w-full bg-[#F2F2F7] dark:bg-[#2C2C2E] px-4 py-3 rounded-xl outline-none text-[15px] text-text-main"
+                 />
+                 <select
+                   value={resourceType}
+                   onChange={(event) => setResourceType(event.target.value)}
+                   className="w-full bg-[#F2F2F7] dark:bg-[#2C2C2E] px-4 py-3 rounded-xl outline-none text-[15px] text-text-main"
+                 >
+                   <option value="link">link</option>
+                   <option value="doc">doc</option>
+                   <option value="pdf">pdf</option>
+                   <option value="video">video</option>
+                   <option value="repo">repo</option>
+                   <option value="software">software</option>
+                 </select>
+               </>
+             )}
+             {isCustomTab && (
+               <p className="px-1 text-[12px] text-text-sub">
+                 {t('community.auto_tab_tag_hint', '发布后会显示在“{{tab}}”标签页', { tab })}
+               </p>
+             )}
+           </div>
+         )}
          <EditorContent editor={editor} className="w-full flex-shrink-0" />
          
-         {/* Internal Image Grid */}
-         <div className="px-4 pb-4">
+         {/* Internal Image Grid (posts only; resources are addressed by URL) */}
+         <div className={isResource ? "hidden" : "px-4 pb-4"}>
             <div className="grid grid-cols-3 gap-2">
                 {imagePreviews.map((img, index) => (
                     <div key={index} className="relative aspect-square rounded-md overflow-hidden bg-[#F2F2F7] dark:bg-[#2C2C2E]">
@@ -183,22 +258,6 @@ const { id } = useParams<{ id: string }>();
                         <Plus className="w-8 h-8 text-[#8E8E93] dark:text-[#636366]" strokeWidth={1.5} />
                     </div>
                 )}
-            </div>
-         </div>
-
-         {/* Extra Toolset like WeChat */}
-         <div className="mt-8 border-t border-black/5 dark:border-white/5 pl-4 flex flex-col">
-            <div className="flex items-center py-4 pr-4 border-b border-black/5 dark:border-white/5 text-black dark:text-white active:bg-black/5 dark:active:bg-white/5 cursor-pointer">
-               <MapPin className="w-6 h-6 mr-3 text-[#8E8E93] dark:text-[#636366]" strokeWidth={1.5} />
-               <span className="text-[16px] flex-1">{t('community.auto_2dfabca9', '所在位置')}</span>
-            </div>
-            <div className="flex items-center py-4 pr-4 border-b border-black/5 dark:border-white/5 text-black dark:text-white active:bg-black/5 dark:active:bg-white/5 cursor-pointer">
-               <AtSign className="w-6 h-6 mr-3 text-[#8E8E93] dark:text-[#636366]" strokeWidth={1.5} />
-               <span className="text-[16px] flex-1">{t('community.auto_2f932a6c', '提醒谁看')}</span>
-            </div>
-            <div className="flex items-center py-4 pr-4 text-black dark:text-white active:bg-black/5 dark:active:bg-white/5 cursor-pointer">
-               <Hash className="w-6 h-6 mr-3 text-[#8E8E93] dark:text-[#636366]" strokeWidth={1.5} />
-               <span className="text-[16px] flex-1">{t('community.auto_274987e7', '参与话题')}</span>
             </div>
          </div>
       </div>

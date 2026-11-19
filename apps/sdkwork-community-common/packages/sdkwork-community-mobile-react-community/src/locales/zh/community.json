@@ -287,5 +287,19 @@
   "auto_tier_lifetime_price": "终身价（元，选填）",
   "auto_tier_lifetime_price_hint": "留空表示仅按年销售",
   "auto_tier_agent_level": "代理等级（选填）",
-  "auto_recommended_badge": "推荐"
+  "auto_recommended_badge": "推荐",
+  "auto_entry_title": "标题",
+  "auto_resource_url": "资源地址（链接或文件 URL）",
+  "auto_resource_required": "请填写资源标题和地址",
+  "auto_tab_tag_hint": "发布后会显示在“{{tab}}”标签页",
+  "auto_resource_unavailable": "资源地址不可用",
+  "auto_invite_link": "邀请链接",
+  "auto_delete_circle": "解散圈子",
+  "auto_delete_circle_confirm": "确定解散该圈子吗？此操作不可恢复。",
+  "auto_pending_review": "审核中",
+  "auto_pending_submitted": "已提交审核，审核通过后展示",
+  "auto_link_copied": "链接已复制",
+  "auto_share_text": "加入圈子：{{name}}",
+  "auto_delete_post": "删除动态",
+  "auto_delete_post_confirm": "确定删除这条动态吗？"
 }

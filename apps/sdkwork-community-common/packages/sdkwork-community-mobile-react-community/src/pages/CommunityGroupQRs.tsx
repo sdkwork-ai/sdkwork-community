@@ -5,6 +5,10 @@ import { CommunityService } from "../services/CommunityService";
 import { CommunityGroup } from "../types";
 import { IconButton, showToast } from "@sdkwork/ui-mobile-react";
 import { ChevronLeft, MessageSquare, Download, Share2 } from "lucide-react";
+import {
+  getCommunityMediaRuntime,
+  isCommunityMediaRuntimeConfigured,
+} from "../services/communityMediaRuntimePort";
 
 export const CommunityGroupQRs: React.FC = () => {
   const { t } = useTranslation();
@@ -12,10 +16,43 @@ const { id, groupId } = useParams<{ id: string, groupId: string }>();
   const navigate = useNavigate();
   const [group, setGroup] = useState<CommunityGroup | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [displayUrls, setDisplayUrls] = useState<Record<string, string>>({});
   
   useEffect(() => {
     loadData();
   }, [id, groupId]);
+
+  useEffect(() => {
+    if (!group || !isCommunityMediaRuntimeConfigured()) {
+      setDisplayUrls({});
+      return;
+    }
+    const uris = [
+      ...(group.qrCodes ?? []).map((qr) => qr.url),
+      ...(group.qrCodeUrl ? [group.qrCodeUrl] : []),
+    ].filter((uri) => uri.startsWith("drive://"));
+    if (uris.length === 0) {
+      setDisplayUrls({});
+      return;
+    }
+    let cancelled = false;
+    const port = getCommunityMediaRuntime();
+    void Promise.all(uris.map(async (uri) => [uri, await port.resolveDisplayUrl?.(uri)] as const))
+      .then((entries) => {
+        if (cancelled) return;
+        const resolved: Record<string, string> = {};
+        for (const [uri, url] of entries) {
+          if (url) resolved[uri] = url;
+        }
+        setDisplayUrls(resolved);
+      })
+      .catch(() => {
+        if (!cancelled) setDisplayUrls({});
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [group]);
 
   const loadData = async () => {
     if (!id || !groupId) return;
@@ -44,13 +81,33 @@ const { id, groupId } = useParams<{ id: string, groupId: string }>();
 
   const handleSaveImage = (url: string) => {
   try {
+      const resolved = displayUrls[url] ?? url;
+      if (resolved.startsWith("drive://")) {
+        showToast(t('community.auto_fn_25b0066f', '保存失败'));
+        return;
+      }
       const link = document.createElement('a');
-      link.href = url;
+      link.href = resolved;
       link.download = `qrcode_${Date.now()}.png`;
       link.click();
       showToast(t('community.auto_fn_n202557e9', '已保存到相册'));
     } catch {
       showToast(t('community.auto_fn_25b0066f', '保存失败'));
+    }
+  };
+
+  const handleShare = async () => {
+    if (!id || !group) return;
+    const url = `${window.location.origin}/community/${id}`;
+    try {
+      if (typeof navigator.share === "function") {
+        await navigator.share({ title: group.name, url });
+        return;
+      }
+      await navigator.clipboard.writeText(url);
+      showToast(t('community.auto_link_copied', '链接已复制'));
+    } catch {
+      showToast(t('community.auto_fn_2f078e83', '操作失败'));
     }
   };
 
@@ -84,7 +141,7 @@ const { id, groupId } = useParams<{ id: string, groupId: string }>();
        <header className="h-[56px] px-4 flex items-center justify-between sticky top-0 z-20 shrink-0 pt-safe bg-black/50 backdrop-blur-md">
           <IconButton icon={<ChevronLeft className="w-6 h-6 text-white" />} className="bg-transparent w-10 h-10 -ml-2" onClick={() => navigate(-1)} />
           <h1 className="text-[17px] font-semibold flex-1 text-center truncate px-2">{group.name}</h1>
-          <IconButton icon={<Share2 className="w-5 h-5 text-white" />} className="bg-transparent w-10 h-10 p-0" onClick={() => showToast(t('community.auto_fn_n47e221', '请截图分享或者保存二维码'))} /></header>
+          <IconButton icon={<Share2 className="w-5 h-5 text-white" />} className="bg-transparent w-10 h-10 p-0" onClick={() => void handleShare()} /></header>
 
        <div className="flex-1 overflow-y-auto no-scrollbar pt-6 pb-20 px-4">
           <div className="flex flex-col gap-6 items-center">
@@ -97,7 +154,7 @@ const { id, groupId } = useParams<{ id: string, groupId: string }>();
                    )}
                    <div className="w-full aspect-square bg-white rounded-[16px] overflow-hidden p-2 relative flex items-center justify-center mx-auto max-w-[240px]">
                       <div className="absolute inset-1 border-2 border-dashed border-black/10 rounded-xl" />
-                      <img src={qrItem.url} alt="QR Code" className="w-[90%] h-[90%] object-contain relative z-10" />
+                      <img src={displayUrls[qrItem.url] ?? qrItem.url} alt="QR Code" className="w-[90%] h-[90%] object-contain relative z-10" />
                    </div>
                    
                    <p className="text-[13px] text-white/50 text-center font-medium mt-6 leading-relaxed">{t('community.auto_12af9de0', '长按识别或者保存二维码')}<br />{t('community.auto_n34e77322', '打开对应 App 进行扫码')}</p>

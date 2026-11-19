@@ -20,6 +20,11 @@ export const PostItem: React.FC<PostItemProps> = ({ post, onLike, onCommentClick
           <CommunityImage src={post.authorAvatar} alt="" fallbackSeed={post.authorName} className="w-10 h-10 rounded-full border border-black/5 dark:border-white/5" />
           <div className="flex flex-col">
             <span className="text-[15px] font-bold text-text-main">{post.authorName}</span>
+            {post.reviewState && post.reviewState !== "approved" ? (
+              <span className="mt-0.5 w-fit rounded-full bg-amber-500/10 px-2 py-0.5 text-[11px] font-medium text-amber-600">
+                {t('community.auto_pending_review', '审核中')}
+              </span>
+            ) : null}
             <span className="text-[12px] text-text-sub">{new Date(post.createdAt).toLocaleString()}</span>
           </div>
         </div>

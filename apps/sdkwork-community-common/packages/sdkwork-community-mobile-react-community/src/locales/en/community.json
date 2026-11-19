@@ -287,5 +287,19 @@
   "auto_tier_lifetime_price": "Lifetime price (CNY, optional)",
   "auto_tier_lifetime_price_hint": "Leave empty for yearly-only",
   "auto_tier_agent_level": "Agent level (optional)",
-  "auto_recommended_badge": "Recommended"
+  "auto_recommended_badge": "Recommended",
+  "auto_entry_title": "Title",
+  "auto_resource_url": "Resource URL (link or file URL)",
+  "auto_resource_required": "Enter the resource title and URL",
+  "auto_tab_tag_hint": "Published entries appear in the \"{{tab}}\" tab",
+  "auto_resource_unavailable": "Resource URL is unavailable",
+  "auto_invite_link": "Invite link",
+  "auto_delete_circle": "Delete circle",
+  "auto_delete_circle_confirm": "Delete this circle? This cannot be undone.",
+  "auto_pending_review": "Pending review",
+  "auto_pending_submitted": "Submitted for review. It will appear after approval.",
+  "auto_link_copied": "Link copied",
+  "auto_share_text": "Join the circle: {{name}}",
+  "auto_delete_post": "Delete post",
+  "auto_delete_post_confirm": "Delete this post?"
 }

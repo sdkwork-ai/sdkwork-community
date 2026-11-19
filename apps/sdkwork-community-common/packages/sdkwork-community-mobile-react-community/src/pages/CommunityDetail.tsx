@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router";
 import { CommunityService, isMemberLimitError, isRevenueTargetError } from "../services/CommunityService";
 import { getCommunityOrderRuntime } from "../services/communityOrderRuntime";
+import { getCommunityCurrentUser } from "../services/communityAuthSessionPort";
 import { Community, Post, Resource, CommunityGroup, MembershipTier } from "../types";
 import { cn, IconButton, showToast, Tabs } from "@sdkwork/ui-mobile-react";
 import { ChevronLeft, Share2, Plus, Users, LayoutDashboard, FileText, Download, Check, Heart, MessageCircle, MessageSquare, QrCode, X, Edit2, Trash2, Newspaper, BookOpen, FolderGit, Package, Settings2, Lock } from "lucide-react";
@@ -17,6 +18,8 @@ import { CommunityCover } from "../components/CommunityDetail/CommunityCover";
 import { CommunityLockedView } from "../components/CommunityDetail/CommunityLockedView";
 import { CommentInputOverlay } from "../components/CommunityDetail/CommentInputOverlay";
 import { CommunityTabsContent } from "../components/CommunityDetail/CommunityTabsContent";
+
+const CUSTOM_TABS = ["news", "docs", "repos", "software"];
 
 export const CommunityDetail: React.FC = () => {
   const { t } = useTranslation();
@@ -36,10 +39,32 @@ const { id } = useParams<{ id: string }>();
   const [isLoading, setIsLoading] = useState(true);
   const [activeCommentPostId, setActiveCommentPostId] = useState<string | null>(null);
   const [commentText, setCommentText] = useState("");
+  const [tabPosts, setTabPosts] = useState<Post[]>([]);
 
   useEffect(() => {
     loadData();
   }, [id]);
+
+  // Custom circle tabs (news/docs/repos/software) are tag-scoped entry
+  // queries; load them when the tab becomes active instead of showing a
+  // permanent empty placeholder.
+  useEffect(() => {
+    if (!id || !CUSTOM_TABS.includes(activeTab)) {
+      setTabPosts([]);
+      return undefined;
+    }
+    let cancelled = false;
+    void CommunityService.getPostsByCommunityTag(id, activeTab)
+      .then((posts) => {
+        if (!cancelled) setTabPosts(posts);
+      })
+      .catch(() => {
+        if (!cancelled) setTabPosts([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [activeTab, id]);
 
   const loadData = async () => {
     if (!id) return;
@@ -199,6 +224,19 @@ const { id } = useParams<{ id: string }>();
     }
   };
 
+  const handleDeletePost = async (postId: string) => {
+    if (!id || !window.confirm(t('community.auto_delete_post_confirm', '确定删除这条动态吗？'))) {
+      return;
+    }
+    try {
+      await CommunityService.deletePost(id, postId);
+      setPosts(prev => prev.filter(post => post.id !== postId));
+      setTabPosts(prev => prev.filter(post => post.id !== postId));
+    } catch {
+      showToast(t('community.auto_fn_2f078e83', '操作失败'));
+    }
+  };
+
   const platformNameMap: Record<string, string> = {
     wechat: t('community.platforms.wechat', '微信'),
     qq: t('community.platforms.qq', 'QQ'),
@@ -209,6 +247,7 @@ const { id } = useParams<{ id: string }>();
     whatsapp: t('community.platforms.whatsapp', 'WhatsApp'),
     other: t('community.platforms.other', '其他')
   };
+  const currentUser = getCommunityCurrentUser() as { id?: string } | null;
 
   if (isLoading) {
     return (
@@ -281,10 +320,13 @@ const { id } = useParams<{ id: string }>();
               <CommunityTabsContent
                 activeTab={activeTab}
                 posts={posts}
+                tabPosts={tabPosts}
                 resources={resources}
                 groups={groups}
                 community={community}
                 platformNameMap={platformNameMap}
+                currentUserId={currentUser?.id}
+                onDelete={handleDeletePost}
                 onLike={handleLike}
                 onCommentClick={(postId) => {
                   setActiveCommentPostId(postId);
@@ -299,11 +341,11 @@ const { id } = useParams<{ id: string }>();
 
        {/* Sub-components below Content Area */}
 
-       {/* Floating Action Button (if joined) */}
-       {community.isJoined && activeTab === 'feeds' && (
+       {/* Floating action button for every publishable tab (if joined) */}
+       {community.isJoined && ["feeds", "resources", "news", "docs", "repos", "software"].includes(activeTab) && (
          <button 
            className="absolute right-5 bottom-[4.5rem] w-14 h-14 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-full shadow-lg shadow-blue-500/30 flex items-center justify-center text-white active:scale-95 transition-transform z-40"
-           onClick={() => navigate(`/community/${community.id}/post`)}
+           onClick={() => navigate(`/community/${community.id}/post?tab=${encodeURIComponent(activeTab)}`)}
          >
            <Plus className="w-7 h-7" />
          </button>

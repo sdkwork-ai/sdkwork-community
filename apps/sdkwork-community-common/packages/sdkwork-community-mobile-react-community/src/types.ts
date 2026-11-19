@@ -24,6 +24,10 @@ export interface Community {
   isRecommended?: boolean;
   price?: number;
   tiers?: MembershipTier[];
+  /** Stored avatar reference (drive://) before the display URL is resolved. */
+  rawAvatar?: string;
+  /** Stored cover reference (drive://) before the display URL is resolved. */
+  rawCoverImage?: string;
 }
 
 /** Circle membership tier (会员等级) shown on the purchase surface. */
@@ -68,6 +72,10 @@ export interface Post {
   comments: number;
   commentsList?: PostComment[];
   isLiked?: boolean;
+  /** Backend review state; pending entries stay visible only to their author. */
+  reviewState?: string;
+  /** Entry tags (used by circle tab feeds such as news/docs/repos/software). */
+  tags?: string[];
 }
 
 export interface QRCodeItem {
@@ -96,6 +104,7 @@ export interface Resource {
   url: string;
   uploadedBy: string;
   createdAt: string;
+  reviewState?: string;
 }
 
 export interface CommunityMember {

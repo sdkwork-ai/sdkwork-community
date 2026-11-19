@@ -150,6 +150,18 @@ async fn community_sqlx_store_migrates_creates_publishes_and_reads_feed() {
         .items
         .is_empty());
 
+    // A newly created entry is submitted for moderation, so the moderation
+    // queue must surface it to the operator. Without this, user-created posts
+    // would be invisible to both readers and moderators.
+    let moderation_queue = store
+        .list_moderation_queue("100001")
+        .await
+        .expect("moderation queue");
+    assert!(
+        moderation_queue.iter().any(|entry| entry.id == "entry_sdk"),
+        "a new entry must enter the moderation queue"
+    );
+
     store
         .update_moderation(
             "100001",
