@@ -28,11 +28,11 @@ struct AppState {
 
 #[derive(Debug, Deserialize)]
 struct FeedQueryParams {
-    #[serde(rename = "categoryId")]
+    #[serde(alias = "categoryId")]
     category_id: Option<String>,
     kind: Option<String>,
     q: Option<String>,
-    #[serde(rename = "reviewState")]
+    #[serde(alias = "reviewState")]
     review_state: Option<String>,
     tag: Option<String>,
     page: Option<i64>,

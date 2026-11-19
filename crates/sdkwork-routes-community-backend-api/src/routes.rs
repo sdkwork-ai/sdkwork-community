@@ -27,11 +27,11 @@ struct BackendState {
 
 #[derive(Debug, Deserialize)]
 struct FeedQueryParams {
-    #[serde(rename = "categoryId")]
+    #[serde(alias = "categoryId")]
     category_id: Option<String>,
     kind: Option<String>,
     q: Option<String>,
-    #[serde(rename = "reviewState")]
+    #[serde(alias = "reviewState")]
     review_state: Option<String>,
     tag: Option<String>,
     page: Option<i64>,
@@ -40,15 +40,15 @@ struct FeedQueryParams {
 
 #[derive(Debug, Deserialize)]
 struct CategoryQueryParams {
-    #[serde(rename = "categoryId")]
+    #[serde(alias = "categoryId")]
     category_id: String,
 }
 
 #[derive(Debug, Deserialize)]
 struct TierQueryParams {
-    #[serde(rename = "categoryId")]
+    #[serde(alias = "categoryId")]
     category_id: String,
-    #[serde(rename = "enabledOnly")]
+    #[serde(alias = "enabledOnly")]
     enabled_only: Option<bool>,
 }
 

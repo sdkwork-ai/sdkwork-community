@@ -20,8 +20,8 @@ export class CommunityTiersManagementApi {
 /** Community tiers.management.list */
   async list(params: CommunityTiersManagementListParams, requestOptions?: ApiRequestOptions): Promise<SdkWorkPageData> {
     const query = buildQueryString([
-      { name: 'categoryId', value: params.categoryId, style: 'form', explode: true, allowReserved: false },
-      { name: 'enabledOnly', value: params.enabledOnly, style: 'form', explode: true, allowReserved: false },
+      { name: 'category_id', value: params.categoryId, style: 'form', explode: true, allowReserved: false },
+      { name: 'enabled_only', value: params.enabledOnly, style: 'form', explode: true, allowReserved: false },
     ]);
     return this.client.request<SdkWorkPageData>(appendQueryString(backendApiPath(`/community/tiers`), query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any, sdkworkUnwrapKind: 'page' });
   }
@@ -60,7 +60,7 @@ export class CommunityTiersApi {
 /** Community tiers.create */
   async create(body: CommunityTierCommand, params: CommunityTiersCreateParams, requestOptions?: ApiRequestOptions): Promise<Record<string, unknown>> {
     const query = buildQueryString([
-      { name: 'categoryId', value: params.categoryId, style: 'form', explode: true, allowReserved: false },
+      { name: 'category_id', value: params.categoryId, style: 'form', explode: true, allowReserved: false },
     ]);
     return this.client.request<Record<string, unknown>>(appendQueryString(backendApiPath(`/community/tiers`), query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'item' });
   }
@@ -68,7 +68,7 @@ export class CommunityTiersApi {
 /** Community tiers.update */
   async update(tierId: string, body: CommunityTierCommand, params: CommunityTiersUpdateParams, requestOptions?: ApiRequestOptions): Promise<Record<string, unknown>> {
     const query = buildQueryString([
-      { name: 'categoryId', value: params.categoryId, style: 'form', explode: true, allowReserved: false },
+      { name: 'category_id', value: params.categoryId, style: 'form', explode: true, allowReserved: false },
     ]);
     return this.client.request<Record<string, unknown>>(appendQueryString(backendApiPath(`/community/tiers/${serializePathParameter(tierId, { name: 'tierId', style: 'simple', explode: false })}`), query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'PATCH' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'item' });
   }
@@ -76,7 +76,7 @@ export class CommunityTiersApi {
 /** Community tiers.delete */
   async delete(tierId: string, params: CommunityTiersDeleteParams, requestOptions?: ApiRequestOptions): Promise<void> {
     const query = buildQueryString([
-      { name: 'categoryId', value: params.categoryId, style: 'form', explode: true, allowReserved: false },
+      { name: 'category_id', value: params.categoryId, style: 'form', explode: true, allowReserved: false },
     ]);
     return this.client.request<void>(appendQueryString(backendApiPath(`/community/tiers/${serializePathParameter(tierId, { name: 'tierId', style: 'simple', explode: false })}`), query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'DELETE' as any });
   }
@@ -84,7 +84,7 @@ export class CommunityTiersApi {
 /** Community tiers.publish */
   async publish(tierId: string, params: CommunityTiersPublishParams, requestOptions?: ApiRequestOptions): Promise<Record<string, unknown>> {
     const query = buildQueryString([
-      { name: 'categoryId', value: params.categoryId, style: 'form', explode: true, allowReserved: false },
+      { name: 'category_id', value: params.categoryId, style: 'form', explode: true, allowReserved: false },
     ]);
     return this.client.request<Record<string, unknown>>(appendQueryString(backendApiPath(`/community/tiers/${serializePathParameter(tierId, { name: 'tierId', style: 'simple', explode: false })}/publish`), query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, sdkworkUnwrapKind: 'item' });
   }
@@ -92,7 +92,7 @@ export class CommunityTiersApi {
 /** Community tiers.unpublish */
   async unpublish(tierId: string, params: CommunityTiersUnpublishParams, requestOptions?: ApiRequestOptions): Promise<Record<string, unknown>> {
     const query = buildQueryString([
-      { name: 'categoryId', value: params.categoryId, style: 'form', explode: true, allowReserved: false },
+      { name: 'category_id', value: params.categoryId, style: 'form', explode: true, allowReserved: false },
     ]);
     return this.client.request<Record<string, unknown>>(appendQueryString(backendApiPath(`/community/tiers/${serializePathParameter(tierId, { name: 'tierId', style: 'simple', explode: false })}/unpublish`), query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, sdkworkUnwrapKind: 'item' });
   }
@@ -113,7 +113,7 @@ export class CommunityGroupsManagementApi {
 /** Community groups.management.list */
   async list(params: CommunityGroupsManagementListParams, requestOptions?: ApiRequestOptions): Promise<SdkWorkPageData> {
     const query = buildQueryString([
-      { name: 'categoryId', value: params.categoryId, style: 'form', explode: true, allowReserved: false },
+      { name: 'category_id', value: params.categoryId, style: 'form', explode: true, allowReserved: false },
     ]);
     return this.client.request<SdkWorkPageData>(appendQueryString(backendApiPath(`/community/groups`), query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any, sdkworkUnwrapKind: 'page' });
   }
@@ -144,7 +144,7 @@ export class CommunityGroupsApi {
 /** Community groups.create */
   async create(body: CommunityGroupCommand, params: CommunityGroupsCreateParams, requestOptions?: ApiRequestOptions): Promise<Record<string, unknown>> {
     const query = buildQueryString([
-      { name: 'categoryId', value: params.categoryId, style: 'form', explode: true, allowReserved: false },
+      { name: 'category_id', value: params.categoryId, style: 'form', explode: true, allowReserved: false },
     ]);
     return this.client.request<Record<string, unknown>>(appendQueryString(backendApiPath(`/community/groups`), query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'item' });
   }
@@ -152,7 +152,7 @@ export class CommunityGroupsApi {
 /** Community groups.update */
   async update(groupId: string, body: CommunityGroupCommand, params: CommunityGroupsUpdateParams, requestOptions?: ApiRequestOptions): Promise<Record<string, unknown>> {
     const query = buildQueryString([
-      { name: 'categoryId', value: params.categoryId, style: 'form', explode: true, allowReserved: false },
+      { name: 'category_id', value: params.categoryId, style: 'form', explode: true, allowReserved: false },
     ]);
     return this.client.request<Record<string, unknown>>(appendQueryString(backendApiPath(`/community/groups/${serializePathParameter(groupId, { name: 'groupId', style: 'simple', explode: false })}`), query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'PATCH' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'item' });
   }
@@ -160,7 +160,7 @@ export class CommunityGroupsApi {
 /** Community groups.delete */
   async delete(groupId: string, params: CommunityGroupsDeleteParams, requestOptions?: ApiRequestOptions): Promise<void> {
     const query = buildQueryString([
-      { name: 'categoryId', value: params.categoryId, style: 'form', explode: true, allowReserved: false },
+      { name: 'category_id', value: params.categoryId, style: 'form', explode: true, allowReserved: false },
     ]);
     return this.client.request<void>(appendQueryString(backendApiPath(`/community/groups/${serializePathParameter(groupId, { name: 'groupId', style: 'simple', explode: false })}`), query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'DELETE' as any });
   }
@@ -181,7 +181,7 @@ export class CommunityMembersManagementApi {
 /** Community members.management.list */
   async list(params: CommunityMembersManagementListParams, requestOptions?: ApiRequestOptions): Promise<SdkWorkPageData> {
     const query = buildQueryString([
-      { name: 'categoryId', value: params.categoryId, style: 'form', explode: true, allowReserved: false },
+      { name: 'category_id', value: params.categoryId, style: 'form', explode: true, allowReserved: false },
     ]);
     return this.client.request<SdkWorkPageData>(appendQueryString(backendApiPath(`/community/members`), query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any, sdkworkUnwrapKind: 'page' });
   }
@@ -208,7 +208,7 @@ export class CommunityMembersApi {
 /** Community members.update */
   async update(memberId: string, body: CommunityMemberPatchCommand, params: CommunityMembersUpdateParams, requestOptions?: ApiRequestOptions): Promise<Record<string, unknown>> {
     const query = buildQueryString([
-      { name: 'categoryId', value: params.categoryId, style: 'form', explode: true, allowReserved: false },
+      { name: 'category_id', value: params.categoryId, style: 'form', explode: true, allowReserved: false },
     ]);
     return this.client.request<Record<string, unknown>>(appendQueryString(backendApiPath(`/community/members/${serializePathParameter(memberId, { name: 'memberId', style: 'simple', explode: false })}`), query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'PATCH' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'item' });
   }
@@ -216,7 +216,7 @@ export class CommunityMembersApi {
 /** Community members.delete */
   async delete(memberId: string, params: CommunityMembersDeleteParams, requestOptions?: ApiRequestOptions): Promise<void> {
     const query = buildQueryString([
-      { name: 'categoryId', value: params.categoryId, style: 'form', explode: true, allowReserved: false },
+      { name: 'category_id', value: params.categoryId, style: 'form', explode: true, allowReserved: false },
     ]);
     return this.client.request<void>(appendQueryString(backendApiPath(`/community/members/${serializePathParameter(memberId, { name: 'memberId', style: 'simple', explode: false })}`), query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'DELETE' as any });
   }
@@ -294,10 +294,10 @@ export class CommunityEntriesManagementApi {
 /** Community entries.management.list */
   async list(params?: CommunityEntriesManagementListParams, requestOptions?: ApiRequestOptions): Promise<SdkWorkPageData> {
     const query = buildQueryString([
-      { name: 'categoryId', value: params?.categoryId, style: 'form', explode: true, allowReserved: false },
+      { name: 'category_id', value: params?.categoryId, style: 'form', explode: true, allowReserved: false },
       { name: 'kind', value: params?.kind, style: 'form', explode: true, allowReserved: false },
       { name: 'q', value: params?.q, style: 'form', explode: true, allowReserved: false },
-      { name: 'reviewState', value: params?.reviewState, style: 'form', explode: true, allowReserved: false },
+      { name: 'review_state', value: params?.reviewState, style: 'form', explode: true, allowReserved: false },
       { name: 'tag', value: params?.tag, style: 'form', explode: true, allowReserved: false },
       { name: 'page', value: params?.page, style: 'form', explode: true, allowReserved: false },
       { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },

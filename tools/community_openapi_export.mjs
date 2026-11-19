@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+﻿#!/usr/bin/env node
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -371,7 +371,7 @@ const appRoutes = [
   route("patch", "/app/v3/api/community/categories/{categoryId}/members/{memberId}", "members.update", false, [pathParam("categoryId"), pathParam("memberId")], "CommunityMemberPatchCommand"),
   route("delete", "/app/v3/api/community/categories/{categoryId}/members/{memberId}", "members.remove", false, [pathParam("categoryId"), pathParam("memberId")]),
   route("post", "/app/v3/api/community/categories/{categoryId}/members/activate", "members.activate", false, [pathParam("categoryId")], "CommunityActivateMembershipCommand"),
-  route("get", "/app/v3/api/community/categories/{categoryId}/tiers", "tiers.list", false, [pathParam("categoryId"), queryParam("includeDisabled", { type: "boolean" })]),
+  route("get", "/app/v3/api/community/categories/{categoryId}/tiers", "tiers.list", false, [pathParam("categoryId"), queryParam("include_disabled", { type: "boolean" })]),
   route("post", "/app/v3/api/community/categories/{categoryId}/tiers", "tiers.create", false, [pathParam("categoryId")], "CommunityTierCommand"),
   route("patch", "/app/v3/api/community/categories/{categoryId}/tiers/{tierId}", "tiers.update", false, [pathParam("categoryId"), pathParam("tierId")], "CommunityTierCommand"),
   route("delete", "/app/v3/api/community/categories/{categoryId}/tiers/{tierId}", "tiers.delete", false, [pathParam("categoryId"), pathParam("tierId")]),
@@ -413,7 +413,7 @@ const backendRoutes = [
   route("post", "/backend/v3/api/community/groups", "groups.create", false, [categoryQueryParam()], "CommunityGroupCommand"),
   route("patch", "/backend/v3/api/community/groups/{groupId}", "groups.update", false, [pathParam("groupId"), categoryQueryParam()], "CommunityGroupCommand"),
   route("delete", "/backend/v3/api/community/groups/{groupId}", "groups.delete", false, [pathParam("groupId"), categoryQueryParam()]),
-  route("get", "/backend/v3/api/community/tiers", "tiers.management.list", false, [categoryQueryParam(), queryParam("enabledOnly", { type: "boolean" })]),
+  route("get", "/backend/v3/api/community/tiers", "tiers.management.list", false, [categoryQueryParam(), queryParam("enabled_only", { type: "boolean" })]),
   route("post", "/backend/v3/api/community/tiers", "tiers.create", false, [categoryQueryParam()], "CommunityTierCommand"),
   route("patch", "/backend/v3/api/community/tiers/{tierId}", "tiers.update", false, [pathParam("tierId"), categoryQueryParam()], "CommunityTierCommand"),
   route("delete", "/backend/v3/api/community/tiers/{tierId}", "tiers.delete", false, [pathParam("tierId"), categoryQueryParam()]),
@@ -483,7 +483,7 @@ function queryParam(name, schema = { type: "string" }) {
 
 function categoryQueryParam() {
   return {
-    name: "categoryId",
+    name: "category_id",
     in: "query",
     required: true,
     schema: { type: "string", minLength: 1 },
@@ -492,10 +492,10 @@ function categoryQueryParam() {
 
 function listParams() {
   return [
-    queryParam("categoryId"),
+    queryParam("category_id"),
     queryParam("kind"),
     queryParam("q"),
-    queryParam("reviewState"),
+    queryParam("review_state"),
     queryParam("tag"),
     queryParam("page", { type: "integer", minimum: 1, default: 1 }),
     queryParam("page_size", { type: "integer", minimum: 1, maximum: 200, default: 20 }),
@@ -727,3 +727,4 @@ if (!args.check) {
 }
 
 process.stdout.write(`[community_openapi_export] ok app=${appRoutes.length} backend=${backendRoutes.length} open=${openRoutes.length}\n`);
+

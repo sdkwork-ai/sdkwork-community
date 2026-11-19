@@ -64,10 +64,10 @@ export class CommunityFeedPublicApi {
 /** Community feed.public.list (deprecated: use the standard feeds stream system) */
   async list(params?: CommunityFeedPublicListParams, requestOptions?: ApiRequestOptions): Promise<SdkWorkPageData> {
     const query = buildQueryString([
-      { name: 'categoryId', value: params?.categoryId, style: 'form', explode: true, allowReserved: false },
+      { name: 'category_id', value: params?.categoryId, style: 'form', explode: true, allowReserved: false },
       { name: 'kind', value: params?.kind, style: 'form', explode: true, allowReserved: false },
       { name: 'q', value: params?.q, style: 'form', explode: true, allowReserved: false },
-      { name: 'reviewState', value: params?.reviewState, style: 'form', explode: true, allowReserved: false },
+      { name: 'review_state', value: params?.reviewState, style: 'form', explode: true, allowReserved: false },
       { name: 'tag', value: params?.tag, style: 'form', explode: true, allowReserved: false },
       { name: 'page', value: params?.page, style: 'form', explode: true, allowReserved: false },
       { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },

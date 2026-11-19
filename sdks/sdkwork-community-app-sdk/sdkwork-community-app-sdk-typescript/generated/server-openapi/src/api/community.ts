@@ -119,10 +119,10 @@ export class CommunityFeedApi {
 /** Community feed.list (deprecated: use the standard feeds stream system) */
   async list(params?: CommunityFeedListParams, requestOptions?: ApiRequestOptions): Promise<SdkWorkPageData> {
     const query = buildQueryString([
-      { name: 'categoryId', value: params?.categoryId, style: 'form', explode: true, allowReserved: false },
+      { name: 'category_id', value: params?.categoryId, style: 'form', explode: true, allowReserved: false },
       { name: 'kind', value: params?.kind, style: 'form', explode: true, allowReserved: false },
       { name: 'q', value: params?.q, style: 'form', explode: true, allowReserved: false },
-      { name: 'reviewState', value: params?.reviewState, style: 'form', explode: true, allowReserved: false },
+      { name: 'review_state', value: params?.reviewState, style: 'form', explode: true, allowReserved: false },
       { name: 'tag', value: params?.tag, style: 'form', explode: true, allowReserved: false },
       { name: 'page', value: params?.page, style: 'form', explode: true, allowReserved: false },
       { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
@@ -175,7 +175,7 @@ export class CommunityTiersApi {
 /** Community tiers.list */
   async list(categoryId: string, params?: CommunityTiersListParams, requestOptions?: ApiRequestOptions): Promise<SdkWorkPageData> {
     const query = buildQueryString([
-      { name: 'includeDisabled', value: params?.includeDisabled, style: 'form', explode: true, allowReserved: false },
+      { name: 'include_disabled', value: params?.includeDisabled, style: 'form', explode: true, allowReserved: false },
     ]);
     return this.client.request<SdkWorkPageData>(appendQueryString(appApiPath(`/community/categories/${serializePathParameter(categoryId, { name: 'categoryId', style: 'simple', explode: false })}/tiers`), query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any, sdkworkUnwrapKind: 'page' });
   }

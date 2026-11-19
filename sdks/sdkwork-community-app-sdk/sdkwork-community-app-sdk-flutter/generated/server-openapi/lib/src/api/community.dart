@@ -109,7 +109,7 @@ class CommunityApi {
   /// Community tiers.list
   Future<SdkWorkListResponse?> tiersList(String categoryId, [bool? includeDisabled]) async {
     final query = buildQueryString([
-      QueryParameterSpec('includeDisabled', includeDisabled, 'form', true, false, null)
+      QueryParameterSpec('include_disabled', includeDisabled, 'form', true, false, null)
     ]);
     final response = await _client.get(ApiPaths.appendQueryString(ApiPaths.appPath('/community/categories/${serializePathParameter(categoryId, const PathParameterSpec('categoryId', 'simple', false))}/tiers'), query));
     return (() {
@@ -198,10 +198,10 @@ class CommunityApi {
   /// Community feed.list (deprecated: use the standard feeds stream system)
   Future<SdkWorkListResponse?> feedList([String? categoryId, String? kind, String? q, String? reviewState, String? tag, int? page, int? pageSize]) async {
     final query = buildQueryString([
-      QueryParameterSpec('categoryId', categoryId, 'form', true, false, null),
+      QueryParameterSpec('category_id', categoryId, 'form', true, false, null),
       QueryParameterSpec('kind', kind, 'form', true, false, null),
       QueryParameterSpec('q', q, 'form', true, false, null),
-      QueryParameterSpec('reviewState', reviewState, 'form', true, false, null),
+      QueryParameterSpec('review_state', reviewState, 'form', true, false, null),
       QueryParameterSpec('tag', tag, 'form', true, false, null),
       QueryParameterSpec('page', page, 'form', true, false, null),
       QueryParameterSpec('page_size', pageSize, 'form', true, false, null)
