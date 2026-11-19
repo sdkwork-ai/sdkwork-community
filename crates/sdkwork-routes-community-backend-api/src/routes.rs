@@ -812,3 +812,38 @@ fn auth_subject(
         )
     })
 }
+
+#[cfg(test)]
+mod query_contract_tests {
+    use super::{CategoryQueryParams, TierQueryParams};
+
+    #[test]
+    fn category_query_accepts_both_names() {
+        let canonical: CategoryQueryParams =
+            serde_json::from_value(serde_json::json!({ "category_id": "1001" }))
+                .expect("canonical query name");
+        assert_eq!(canonical.category_id, "1001");
+        let legacy: CategoryQueryParams =
+            serde_json::from_value(serde_json::json!({ "categoryId": "1001" }))
+                .expect("legacy query name");
+        assert_eq!(legacy.category_id, "1001");
+    }
+
+    #[test]
+    fn tier_query_accepts_both_names() {
+        let canonical: TierQueryParams = serde_json::from_value(serde_json::json!({
+            "category_id": "1001",
+            "enabled_only": true
+        }))
+        .expect("canonical query names");
+        assert_eq!(canonical.category_id, "1001");
+        assert_eq!(canonical.enabled_only, Some(true));
+        let legacy: TierQueryParams = serde_json::from_value(serde_json::json!({
+            "categoryId": "1001",
+            "enabledOnly": true
+        }))
+        .expect("legacy query names");
+        assert_eq!(legacy.category_id, "1001");
+        assert_eq!(legacy.enabled_only, Some(true));
+    }
+}

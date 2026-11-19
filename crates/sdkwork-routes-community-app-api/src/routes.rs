@@ -1079,3 +1079,30 @@ async fn activate_membership(
         Err(error) => map_service_error(context.as_ref().map(|Extension(ctx)| ctx), error),
     }
 }
+
+#[cfg(test)]
+mod query_contract_tests {
+    use super::FeedQueryParams;
+
+    #[test]
+    fn feed_query_accepts_canonical_snake_case() {
+        let query: FeedQueryParams = serde_json::from_value(serde_json::json!({
+            "category_id": "1001",
+            "review_state": "pending-review"
+        }))
+        .expect("canonical query names");
+        assert_eq!(query.category_id.as_deref(), Some("1001"));
+        assert_eq!(query.review_state.as_deref(), Some("pending-review"));
+    }
+
+    #[test]
+    fn feed_query_keeps_legacy_camel_case_aliases() {
+        let query: FeedQueryParams = serde_json::from_value(serde_json::json!({
+            "categoryId": "1001",
+            "reviewState": "approved"
+        }))
+        .expect("legacy query names");
+        assert_eq!(query.category_id.as_deref(), Some("1001"));
+        assert_eq!(query.review_state.as_deref(), Some("approved"));
+    }
+}
