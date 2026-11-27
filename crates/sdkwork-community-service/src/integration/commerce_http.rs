@@ -61,6 +61,8 @@ const HTTP_REQUEST_TIMEOUT: Duration = Duration::from_secs(15);
 #[derive(Clone)]
 pub(crate) struct CommerceHttpBackend {
     base_url: String,
+    /// Registry service name for this backend's SDKWork surface.
+    registry_service: &'static str,
     auth_token: String,
     access_token: String,
     http: reqwest::Client,
@@ -93,7 +95,14 @@ impl CommerceHttpBackend {
     }
 
     fn url(&self, path: &str) -> String {
-        format!("{}{}", self.base_url.trim_end_matches('/'), path)
+        // APP_SDK_INTEGRATION_SPEC.md §5.2.2: commerce dependencies are other
+        // SDKWork surfaces, so each request resolves through the shared registry
+        // component with the configured base URL as the degradation tier.
+        let base_url = sdkwork_utils_rust::service_base_url::registry_base_url_or(
+            self.registry_service,
+            &self.base_url,
+        );
+        format!("{}{}", base_url.trim_end_matches('/'), path)
     }
 }
 
@@ -121,6 +130,18 @@ pub(crate) fn order_backend_from_env() -> Result<Option<CommerceHttpBackend>, St
         ORDER_AUTH_TOKEN_ENV,
         ORDER_ACCESS_TOKEN_ENV,
     )
+}
+
+/// Registry service name for a commerce backend module.
+///
+/// `APP_SDK_INTEGRATION_SPEC.md` §5.2.2: an in-scope hop names the surface it
+/// dials, so the shared registry component can resolve a healthy instance.
+fn registry_service_for(module: &str) -> &'static str {
+    match module {
+        "membership" => "sdkwork-membership",
+        "order" => "sdkwork-order",
+        _ => "sdkwork-api-cloud-gateway",
+    }
 }
 
 /// Pure transport resolution: an unset/blank base URL selects in-process, and a
@@ -157,6 +178,7 @@ pub(crate) fn resolve_backend(
     let http = build_http_client()?;
     Ok(Some(CommerceHttpBackend {
         base_url,
+        registry_service: registry_service_for(module),
         auth_token,
         access_token,
         http,
